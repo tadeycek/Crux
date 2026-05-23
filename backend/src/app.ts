@@ -8,7 +8,18 @@ import { chatRouter } from './routes/chat'
 const app = express()
 const port = process.env.PORT ?? 3001
 
-app.use(cors({ origin: process.env.FRONTEND_URL ?? 'http://localhost:5173' }))
+const allowedOrigins = (process.env.FRONTEND_URL ?? 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim())
+
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true)
+    if (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost')) return cb(null, true)
+    if (allowedOrigins.includes(origin)) return cb(null, true)
+    cb(new Error(`CORS: ${origin} not allowed`))
+  },
+}))
 app.use(express.json())
 
 app.get('/health', (_req, res) => res.json({ ok: true }))

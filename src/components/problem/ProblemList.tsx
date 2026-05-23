@@ -23,7 +23,7 @@ export function ProblemList({ onSelect }: ProblemListProps) {
     queryFn: () => api.problems.topics(),
   })
 
-  const { data: problems = [], isLoading } = useQuery<ApiProblem[]>({
+  const { data: problems = [], isLoading, isError } = useQuery<ApiProblem[]>({
     queryKey: ['problems', topicFilter, diffFilter],
     queryFn: () => api.problems.list({
       topic: topicFilter || undefined,
@@ -74,6 +74,10 @@ export function ProblemList({ onSelect }: ProblemListProps) {
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {isLoading ? (
           <div style={{ padding: 20, fontSize: 13, color: 'var(--fg-4)' }}>Loading…</div>
+        ) : isError ? (
+          <div style={{ padding: 20, fontSize: 13, color: 'var(--danger)' }}>
+            Could not reach backend — is it running on port 3001?
+          </div>
         ) : problems.length === 0 ? (
           <div style={{ padding: 20, fontSize: 13, color: 'var(--fg-4)' }}>No problems match the filters.</div>
         ) : (
