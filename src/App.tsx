@@ -3,6 +3,7 @@ import { TopBar } from './components/layout/TopBar'
 import { StatusBar } from './components/layout/StatusBar'
 import { ProblemPanel } from './components/problem/ProblemPanel'
 import { CodeEditor } from './components/editor/CodeEditor'
+import { ChatPanel } from './components/chat/ChatPanel'
 
 const INITIAL_CODE = `class Solution:
     def lengthOfLongestSubstring(self, s: str) -> int:
@@ -64,17 +65,7 @@ function App() {
         }}>
           <CodeEditor code={code} onChange={setCode} onRun={handleRun} />
           <div style={{ background: 'var(--border-soft)' }} />
-          <div style={{
-            background: 'var(--bg-1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--fg-4)',
-            fontSize: 13,
-            fontFamily: 'var(--mono)',
-          }}>
-            chat panel
-          </div>
+          <ChatPanel />
         </div>
       </main>
 
