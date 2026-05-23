@@ -4,6 +4,8 @@ import { StatusBar } from './components/layout/StatusBar'
 import { ProblemPanel } from './components/problem/ProblemPanel'
 import { CodeEditor } from './components/editor/CodeEditor'
 import { ChatPanel } from './components/chat/ChatPanel'
+import { AuthScreen } from './components/auth/AuthScreen'
+import { useAuth, signOut } from './lib/auth'
 
 const INITIAL_CODE = `class Solution:
     def lengthOfLongestSubstring(self, s: str) -> int:
@@ -19,6 +21,7 @@ const INITIAL_CODE = `class Solution:
 # TODO: there has to be a faster way…`
 
 function App() {
+  const { user, loading } = useAuth()
   const [code, setCode] = useState(INITIAL_CODE)
   const [activeLine, setActiveLine] = useState(8)
   const [runState, setRunState] = useState('Last run: 142ms · 6/6 tests passed')
@@ -38,6 +41,19 @@ function App() {
     setTimeout(() => setRunState('Last run: 138ms · 6/6 tests passed · brute force'), 900)
   }
 
+  if (loading) {
+    return (
+      <div style={{
+        height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'var(--bg-0)', color: 'var(--fg-3)', fontSize: 13,
+      }}>
+        Loading…
+      </div>
+    )
+  }
+
+  if (!user) return <AuthScreen />
+
   return (
     <div style={{
       height: '100vh',
@@ -45,9 +61,8 @@ function App() {
       gridTemplateRows: '48px 1fr 28px',
       background: 'var(--bg-0)',
     }}>
-      <TopBar />
+      <TopBar userEmail={user.email} onSignOut={signOut} />
 
-      {/* main content grid — panels will be filled in subsequent PRs */}
       <main style={{
         display: 'grid',
         gridTemplateColumns: 'minmax(360px, 420px) 1fr',
@@ -56,7 +71,6 @@ function App() {
       }}>
         <ProblemPanel />
 
-        {/* right column: editor top + chat bottom */}
         <div style={{
           display: 'grid',
           gridTemplateRows: 'minmax(0, 1.15fr) 1px minmax(0, 1fr)',
