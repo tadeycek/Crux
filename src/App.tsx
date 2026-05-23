@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { TopBar } from './components/layout/TopBar'
 import { StatusBar } from './components/layout/StatusBar'
+import { ProblemPanel } from './components/problem/ProblemPanel'
 
 function App() {
   const [activeLine, setActiveLine] = useState(8)
@@ -37,19 +38,7 @@ function App() {
         minHeight: 0,
         borderTop: '1px solid var(--border-soft)',
       }}>
-        {/* problem panel placeholder */}
-        <aside style={{
-          background: 'var(--bg-1)',
-          borderRight: '1px solid var(--border-soft)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'var(--fg-4)',
-          fontSize: 13,
-          fontFamily: 'var(--mono)',
-        }}>
-          problem panel
-        </aside>
+        <ProblemPanel />
 
         {/* right column: editor top + chat bottom */}
         <div style={{
