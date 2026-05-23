@@ -58,7 +58,12 @@ const MODE_PLACEHOLDER: Record<TutorMode, string> = {
   Review: 'Paste code or a paragraph to review…',
 }
 
-export function ChatPanel() {
+interface ChatPanelProps {
+  sessionId?: string
+  messages?: import('../../lib/api').ApiMessage[]
+}
+
+export function ChatPanel({ sessionId: _sessionId, messages: _apiMessages }: ChatPanelProps = {}) {
   const [messages, setMessages] = useState<ChatMessage[]>(SEED_MESSAGES)
   const [draft, setDraft] = useState('')
   const [typing, setTyping] = useState(false)
