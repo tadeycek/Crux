@@ -1,121 +1,98 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useEffect } from 'react'
+import { TopBar } from './components/layout/TopBar'
+import { StatusBar } from './components/layout/StatusBar'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [activeLine, setActiveLine] = useState(8)
+  const [runState, setRunState] = useState('Last run: 142ms · 6/6 tests passed')
+
+  useEffect(() => {
+    const seq = [8, 9, 6, 12, 8]
+    let i = 0
+    const id = setInterval(() => {
+      i = (i + 1) % seq.length
+      setActiveLine(seq[i])
+    }, 2400)
+    return () => clearInterval(id)
+  }, [])
+
+  const handleRun = () => {
+    setRunState('Running tests…')
+    setTimeout(() => setRunState('Last run: 138ms · 6/6 tests passed · brute force'), 900)
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div style={{
+      height: '100vh',
+      display: 'grid',
+      gridTemplateRows: '48px 1fr 28px',
+      background: 'var(--bg-0)',
+    }}>
+      <TopBar />
 
-      <div className="ticks"></div>
+      {/* main content grid — panels will be filled in subsequent PRs */}
+      <main style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(360px, 420px) 1fr',
+        minHeight: 0,
+        borderTop: '1px solid var(--border-soft)',
+      }}>
+        {/* problem panel placeholder */}
+        <aside style={{
+          background: 'var(--bg-1)',
+          borderRight: '1px solid var(--border-soft)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--fg-4)',
+          fontSize: 13,
+          fontFamily: 'var(--mono)',
+        }}>
+          problem panel
+        </aside>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+        {/* right column: editor top + chat bottom */}
+        <div style={{
+          display: 'grid',
+          gridTemplateRows: 'minmax(0, 1.15fr) 1px minmax(0, 1fr)',
+          minHeight: 0,
+          minWidth: 0,
+        }}>
+          <div style={{
+            background: 'var(--bg-1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--fg-4)',
+            fontSize: 13,
+            fontFamily: 'var(--mono)',
+          }}
+            onClick={handleRun}
+          >
+            code editor
+          </div>
+          <div style={{ background: 'var(--border-soft)' }} />
+          <div style={{
+            background: 'var(--bg-1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--fg-4)',
+            fontSize: 13,
+            fontFamily: 'var(--mono)',
+          }}>
+            chat panel
+          </div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      </main>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <StatusBar
+        activeLine={activeLine}
+        totalLines={12}
+        savedAt="just now"
+        runState={runState}
+      />
+    </div>
   )
 }
 
