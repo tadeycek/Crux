@@ -2,7 +2,12 @@ import { LogoIcon, SearchIcon } from '../icons'
 
 const NAV_ITEMS = ['Practice', 'Concepts', 'Playlists', 'Progress'] as const
 
-export function TopBar() {
+interface TopBarProps {
+  userEmail?: string
+  onSignOut?: () => void
+}
+
+export function TopBar({ userEmail, onSignOut }: TopBarProps) {
   return (
     <header style={{
       display: 'grid',
@@ -101,8 +106,12 @@ export function TopBar() {
           fontSize: 12, fontWeight: 600,
           background: 'linear-gradient(135deg, oklch(0.55 0.12 30), oklch(0.45 0.13 350))',
           color: 'white', flexShrink: 0,
-        }}>
-          M
+          cursor: onSignOut ? 'pointer' : 'default',
+          title: userEmail,
+        }}
+          onClick={onSignOut}
+        >
+          {userEmail ? userEmail[0].toUpperCase() : 'M'}
         </div>
       </div>
     </header>
