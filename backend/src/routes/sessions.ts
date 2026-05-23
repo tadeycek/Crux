@@ -1,8 +1,12 @@
 import { Router } from 'express'
 import { db } from '../db/client'
-import { sessions, messages, problems } from '../db/schema'
+import { sessions, messages, problems, profiles } from '../db/schema'
 import { eq, and, desc } from 'drizzle-orm'
 import { requireAuth, AuthRequest } from '../middleware/auth'
+
+async function ensureProfile(userId: string) {
+  await db.insert(profiles).values({ id: userId }).onConflictDoNothing()
+}
 
 export const sessionsRouter = Router()
 sessionsRouter.use(requireAuth)
@@ -22,6 +26,8 @@ sessionsRouter.post('/', async (req: AuthRequest, res) => {
     res.status(400).json({ error: 'problemId required' })
     return
   }
+
+  await ensureProfile(req.userId!)
 
   const existing = await db.select().from(sessions)
     .where(and(

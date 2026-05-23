@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import express from 'express'
+import express, { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
 import { problemsRouter } from './routes/problems'
 import { sessionsRouter } from './routes/sessions'
@@ -27,6 +27,12 @@ app.get('/health', (_req, res) => res.json({ ok: true }))
 app.use('/api/problems', problemsRouter)
 app.use('/api/sessions', sessionsRouter)
 app.use('/api/chat', chatRouter)
+
+// Global error handler — returns JSON instead of crashing
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error(err)
+  res.status(500).json({ error: err.message ?? 'Internal server error' })
+})
 
 app.listen(port, () => {
   console.log(`Crux backend running on :${port}`)
