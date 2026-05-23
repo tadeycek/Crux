@@ -1,45 +1,45 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { TopBar } from './components/layout/TopBar'
 import { StatusBar } from './components/layout/StatusBar'
 import { ProblemPanel } from './components/problem/ProblemPanel'
+import { ProblemList } from './components/problem/ProblemList'
 import { CodeEditor } from './components/editor/CodeEditor'
 import { ChatPanel } from './components/chat/ChatPanel'
 import { AuthScreen } from './components/auth/AuthScreen'
 import { useAuth, signOut } from './lib/auth'
-
-const INITIAL_CODE = `class Solution:
-    def lengthOfLongestSubstring(self, s: str) -> int:
-        # brute force — check every substring
-        longest = 0
-        for i in range(len(s)):
-            for j in range(i, len(s)):
-                window = s[i:j+1]
-                if len(set(window)) == len(window):
-                    longest = max(longest, j - i + 1)
-        return longest
-
-# TODO: there has to be a faster way…`
+import { api } from './lib/api'
+import type { ApiProblemDetail } from './lib/api'
 
 function App() {
   const { user, loading } = useAuth()
-  const [code, setCode] = useState(INITIAL_CODE)
-  const [activeLine, setActiveLine] = useState(8)
-  const [runState, setRunState] = useState('Last run: 142ms · 6/6 tests passed')
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null)
+  const [code, setCode] = useState('')
+  const [runState, setRunState] = useState('Ready')
 
-  useEffect(() => {
-    const seq = [8, 9, 6, 12, 8]
-    let i = 0
-    const id = setInterval(() => {
-      i = (i + 1) % seq.length
-      setActiveLine(seq[i])
-    }, 2400)
-    return () => clearInterval(id)
-  }, [])
+  const { data: problem } = useQuery<ApiProblemDetail>({
+    queryKey: ['problem', selectedSlug],
+    queryFn: () => api.problems.bySlug(selectedSlug!),
+    enabled: !!selectedSlug,
+  })
+
+  function handleSelectProblem(slug: string) {
+    setSelectedSlug(slug)
+    setCode('')
+  }
+
+  function handleBack() {
+    setSelectedSlug(null)
+    setCode('')
+  }
 
   const handleRun = () => {
     setRunState('Running tests…')
-    setTimeout(() => setRunState('Last run: 138ms · 6/6 tests passed · brute force'), 900)
+    setTimeout(() => setRunState('Done'), 900)
   }
+
+  const displayCode = problem ? (code || problem.starterCode) : code
+  const activeLine = 1
 
   if (loading) {
     return (
@@ -69,7 +69,11 @@ function App() {
         minHeight: 0,
         borderTop: '1px solid var(--border-soft)',
       }}>
-        <ProblemPanel />
+        {problem && selectedSlug ? (
+          <ProblemPanel problem={problem} onBack={handleBack} />
+        ) : (
+          <ProblemList onSelect={handleSelectProblem} />
+        )}
 
         <div style={{
           display: 'grid',
@@ -77,7 +81,7 @@ function App() {
           minHeight: 0,
           minWidth: 0,
         }}>
-          <CodeEditor code={code} onChange={setCode} onRun={handleRun} />
+          <CodeEditor code={displayCode} onChange={setCode} onRun={handleRun} />
           <div style={{ background: 'var(--border-soft)' }} />
           <ChatPanel />
         </div>
@@ -85,7 +89,7 @@ function App() {
 
       <StatusBar
         activeLine={activeLine}
-        totalLines={code.split('\n').length}
+        totalLines={displayCode.split('\n').length}
         savedAt="just now"
         runState={runState}
       />

@@ -1,40 +1,13 @@
 import { BrainIcon, DotIcon } from '../icons'
-import type { Problem } from '../../types'
-
-const SAMPLE_PROBLEM: Problem = {
-  number: '0142',
-  title: 'Longest Substring Without Repeating Characters',
-  difficulty: 'Medium',
-  topics: ['Hash Table', 'String', 'Sliding Window'],
-  description: [
-    'Given a string s, find the length of the longest substring without repeating characters.',
-    'A substring is a contiguous, non-empty sequence of characters within s. Return the length of the longest one that contains all distinct characters.',
-  ],
-  constraints: [
-    '0 ≤ s.length ≤ 5 × 10⁴',
-    's consists of English letters, digits, symbols and spaces.',
-  ],
-  examples: [
-    {
-      input: 's = "abcabcbb"',
-      output: '3',
-      explain: 'The answer is "abc", with length 3.',
-    },
-    {
-      input: 's = "pwwkew"',
-      output: '3',
-      explain: 'The answer is "wke". Note "pwke" is a subsequence, not a substring.',
-    },
-  ],
-}
+import type { ApiProblemDetail } from '../../lib/api'
 
 const DIFFICULTY_STYLES = {
-  Easy:   { color: 'var(--ok)',     bg: 'oklch(0.34 0.07 155 / 0.35)',  border: 'oklch(0.74 0.13 155 / 0.27)' },
-  Medium: { color: 'var(--warn)',   bg: 'oklch(0.36 0.08 75 / 0.35)',   border: 'oklch(0.78 0.13 75 / 0.27)'  },
-  Hard:   { color: 'var(--danger)', bg: 'oklch(0.34 0.09 25 / 0.35)',   border: 'oklch(0.71 0.15 25 / 0.27)'  },
+  easy:   { label: 'Easy',   color: 'var(--ok)',     bg: 'oklch(0.34 0.07 155 / 0.35)',  border: 'oklch(0.74 0.13 155 / 0.27)' },
+  medium: { label: 'Medium', color: 'var(--warn)',   bg: 'oklch(0.36 0.08 75 / 0.35)',   border: 'oklch(0.78 0.13 75 / 0.27)'  },
+  hard:   { label: 'Hard',   color: 'var(--danger)', bg: 'oklch(0.34 0.09 25 / 0.35)',   border: 'oklch(0.71 0.15 25 / 0.27)'  },
 }
 
-function DifficultyBadge({ level }: { level: Problem['difficulty'] }) {
+function DifficultyBadge({ level }: { level: ApiProblemDetail['difficulty'] }) {
   const s = DIFFICULTY_STYLES[level]
   return (
     <span style={{
@@ -45,7 +18,7 @@ function DifficultyBadge({ level }: { level: Problem['difficulty'] }) {
       border: `1px solid ${s.border}`,
     }}>
       <span style={{ display: 'inline-flex', color: s.color }}><DotIcon /></span>
-      {level}
+      {s.label}
     </span>
   )
 }
@@ -53,10 +26,11 @@ function DifficultyBadge({ level }: { level: Problem['difficulty'] }) {
 const TABS = ['Description', 'Editorial', 'Solutions', 'Submissions'] as const
 
 interface ProblemPanelProps {
-  problem?: Problem
+  problem: ApiProblemDetail
+  onBack: () => void
 }
 
-export function ProblemPanel({ problem = SAMPLE_PROBLEM }: ProblemPanelProps) {
+export function ProblemPanel({ problem, onBack }: ProblemPanelProps) {
   return (
     <aside style={{
       display: 'flex', flexDirection: 'column',
@@ -67,7 +41,19 @@ export function ProblemPanel({ problem = SAMPLE_PROBLEM }: ProblemPanelProps) {
         display: 'flex', gap: 2, padding: '4px 8px 0',
         borderBottom: '1px solid var(--border-soft)',
         background: 'var(--bg-1)',
+        alignItems: 'center',
       }}>
+        <button
+          onClick={onBack}
+          style={{
+            background: 'transparent', border: 0, cursor: 'pointer',
+            color: 'var(--fg-4)', fontSize: 13, padding: '6px 6px 6px 2px',
+            marginRight: 4, display: 'inline-flex', alignItems: 'center',
+          }}
+          title="Back to problem list"
+        >
+          ←
+        </button>
         {TABS.map((tab) => {
           const isActive = tab === 'Description'
           return (
@@ -81,15 +67,6 @@ export function ProblemPanel({ problem = SAMPLE_PROBLEM }: ProblemPanelProps) {
               display: 'inline-flex', alignItems: 'center', gap: 6,
             }}>
               {tab}
-              {tab === 'Editorial' && (
-                <span style={{ color: 'var(--fg-4)', fontSize: 10 }}>🞊</span>
-              )}
-              {tab === 'Solutions' && (
-                <span style={{
-                  fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--fg-4)',
-                  background: 'var(--bg-2)', padding: '1px 5px', borderRadius: 4,
-                }}>3.4k</span>
-              )}
             </button>
           )
         })}
@@ -105,7 +82,7 @@ export function ProblemPanel({ problem = SAMPLE_PROBLEM }: ProblemPanelProps) {
             letterSpacing: '0.04em',
           }}>
             <span>
-              <span style={{ opacity: 0.6 }}>#</span>{problem.number}
+              <span style={{ opacity: 0.6 }}>#</span>{String(problem.id).padStart(4, '0')}
             </span>
             <span style={{ flex: '0 0 24px', height: 1, background: 'var(--border)' }} />
             <span style={{
@@ -133,12 +110,12 @@ export function ProblemPanel({ problem = SAMPLE_PROBLEM }: ProblemPanelProps) {
             <DifficultyBadge level={problem.difficulty} />
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {problem.topics.map((t) => (
-                <span key={t} style={{
+                <span key={t.slug} style={{
                   fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)',
                   background: 'var(--bg-2)', border: '1px solid var(--border-soft)',
                   padding: '2px 8px', borderRadius: 999,
                 }}>
-                  {t}
+                  {t.name}
                 </span>
               ))}
             </div>
@@ -147,20 +124,10 @@ export function ProblemPanel({ problem = SAMPLE_PROBLEM }: ProblemPanelProps) {
 
         {/* body */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 20 }}>
-          {/* description paragraphs */}
-          {problem.description.map((para, i) => (
-            <p key={i} style={{ margin: 0, color: 'var(--fg-2)', fontSize: 13.5, lineHeight: 1.65 }}>
-              {para.split(/(`[^`]+`|substring|distinct)/g).map((seg, k) => {
-                if (seg.startsWith('`') && seg.endsWith('`')) {
-                  return <InlineCode key={k}>{seg.slice(1, -1)}</InlineCode>
-                }
-                if (seg === 'substring' || seg === 'distinct') {
-                  return <em key={k} style={{ color: 'var(--fg)', fontStyle: 'normal', fontWeight: 500 }}>{seg}</em>
-                }
-                return <span key={k}>{seg}</span>
-              })}
-            </p>
-          ))}
+          {/* description */}
+          <p style={{ margin: 0, color: 'var(--fg-2)', fontSize: 13.5, lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
+            {problem.description}
+          </p>
 
           {/* examples */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -209,15 +176,15 @@ export function ProblemPanel({ problem = SAMPLE_PROBLEM }: ProblemPanelProps) {
               Constraints
             </div>
             <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {problem.constraints.map((c, i) => (
+              {problem.constraints.split('\n').filter(Boolean).map((c, i) => (
                 <li key={i} style={{ color: 'var(--fg-2)', fontSize: 12.5 }}>
-                  <InlineCode>{c}</InlineCode>
+                  <InlineCode>{c.replace(/^- /, '')}</InlineCode>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* tutor mode callout */}
+          {/* tutor callout */}
           <div style={{
             marginTop: 4,
             border: '1px solid oklch(0.42 0.10 278 / 0.5)',
@@ -233,7 +200,7 @@ export function ProblemPanel({ problem = SAMPLE_PROBLEM }: ProblemPanelProps) {
               Tutor mode is on
             </div>
             <p style={{ margin: 0, color: 'var(--fg-2)', fontSize: 12.5, lineHeight: 1.55 }}>
-              think.dev won't show you the solution. Ask away — it'll question you back until{' '}
+              Crux won't show you the solution. Ask away — it'll question you back until{' '}
               <em style={{ color: 'var(--fg)', fontStyle: 'italic' }}>you</em> see the answer.
             </p>
           </div>
