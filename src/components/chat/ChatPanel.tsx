@@ -1,54 +1,8 @@
-import { useState, useRef, useLayoutEffect } from 'react'
+import { useState, useRef, useLayoutEffect, useEffect } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { TutorAvatarIcon, SparkIcon, TestTubeIcon, SendIcon, BranchIcon, MoreIcon } from '../icons'
-import type { ChatMessage, MessagePart } from '../../types'
-
-const SEED_MESSAGES: ChatMessage[] = [
-  {
-    role: 'tutor',
-    time: '9:41',
-    body: [
-      { type: 'text', text: 'Welcome back. I read your brute-force draft on the right.' },
-      { type: 'text', text: "Before you optimize — let's make sure you can describe what it costs. If `s` has length n, how many substrings does your outer + inner loop visit?" },
-      { type: 'chips', items: ['About n', 'About n²', 'About n³', 'Not sure'] },
-    ],
-  },
-  {
-    role: 'user',
-    time: '9:42',
-    body: [{ type: 'text', text: 'n² substrings I think.' }],
-  },
-  {
-    role: 'tutor',
-    time: '9:42',
-    body: [
-      { type: 'text', text: 'Right. And inside the loop, what does `len(set(window)) == len(window)` actually do for a window of size k?' },
-      { type: 'text', text: 'Talk me through the work, not the syntax.' },
-    ],
-  },
-  {
-    role: 'user',
-    time: '9:43',
-    body: [{ type: 'text', text: 'Builds a set of size k → O(k). So total is O(n³)?' }],
-  },
-  {
-    role: 'tutor',
-    time: '9:43',
-    body: [
-      { type: 'text', text: "Yes. So the real question isn't \"can I write this faster in Python\" — it's:" },
-      { type: 'quote', text: 'Why am I recomputing the set for every (i, j) pair, when (i, j+1) is just one character more than (i, j)?' },
-      { type: 'text', text: 'What information from the previous window could survive into the next one?' },
-    ],
-  },
-]
-
-const MOCK_FOLLOW_UP: ChatMessage = {
-  role: 'tutor',
-  time: '',
-  body: [
-    { type: 'text', text: 'Good. Hold onto that intuition.' },
-    { type: 'text', text: 'If you slide the window forward by one and the new character was already inside, which index do you have to jump `i` to — and how do you know it in O(1)?' },
-  ],
-}
+import { api } from '../../lib/api'
+import type { ApiMessage } from '../../lib/api'
 
 type TutorMode = 'Socratic' | 'Hint' | 'Review'
 
@@ -58,36 +12,65 @@ const MODE_PLACEHOLDER: Record<TutorMode, string> = {
   Review: 'Paste code or a paragraph to review…',
 }
 
-interface ChatPanelProps {
-  sessionId?: string
-  messages?: import('../../lib/api').ApiMessage[]
+function fmtTime(iso: string) {
+  const d = new Date(iso)
+  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-export function ChatPanel({ sessionId: _sessionId, messages: _apiMessages }: ChatPanelProps = {}) {
-  const [messages, setMessages] = useState<ChatMessage[]>(SEED_MESSAGES)
+interface ChatPanelProps {
+  sessionId?: string
+  messages?: ApiMessage[]
+}
+
+export function ChatPanel({ sessionId, messages: initialMessages }: ChatPanelProps = {}) {
+  const [messages, setMessages] = useState<ApiMessage[]>([])
   const [draft, setDraft] = useState('')
   const [typing, setTyping] = useState(false)
   const [mode, setMode] = useState<TutorMode>('Socratic')
   const scrollerRef = useRef<HTMLDivElement>(null)
+  const hasSession = !!sessionId
+
+  // Sync messages from session detail when they arrive / change
+  useEffect(() => {
+    if (initialMessages) setMessages(initialMessages)
+  }, [initialMessages?.length])
 
   useLayoutEffect(() => {
     const el = scrollerRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [messages, typing])
 
-  const send = (text: string) => {
-    if (!text.trim()) return
-    const t = new Date()
-    const stamp = `${t.getHours()}:${String(t.getMinutes()).padStart(2, '0')}`
-
-    setMessages((m) => [...m, { role: 'user', time: stamp, body: [{ type: 'text', text }] }])
-    setDraft('')
-    setTyping(true)
-
-    setTimeout(() => {
+  const sendMutation = useMutation({
+    mutationFn: ({ content }: { content: string }) => api.chat.send(sessionId!, content),
+    onMutate: ({ content }) => {
+      const optimistic: ApiMessage = {
+        id: `opt-${Date.now()}`,
+        sessionId: sessionId!,
+        role: 'user',
+        content,
+        createdAt: new Date().toISOString(),
+      }
+      setMessages(m => [...m, optimistic])
+      setTyping(true)
+    },
+    onSuccess: (data) => {
       setTyping(false)
-      setMessages((m) => [...m, { ...MOCK_FOLLOW_UP, time: stamp }])
-    }, 1100)
+      setMessages(m => {
+        // replace optimistic user message with real one, then add assistant
+        const withoutOpt = m.filter(msg => !msg.id.startsWith('opt-'))
+        return [...withoutOpt, data.userMessage, data.assistantMessage]
+      })
+    },
+    onError: () => {
+      setTyping(false)
+      setMessages(m => m.filter(msg => !msg.id.startsWith('opt-')))
+    },
+  })
+
+  const send = (text: string) => {
+    if (!text.trim() || !hasSession || sendMutation.isPending) return
+    setDraft('')
+    sendMutation.mutate({ content: text.trim() })
   }
 
   return (
@@ -102,8 +85,8 @@ export function ChatPanel({ sessionId: _sessionId, messages: _apiMessages }: Cha
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <span style={{
             width: 8, height: 8, borderRadius: '50%',
-            background: 'var(--accent)',
-            boxShadow: '0 0 0 3px oklch(0.48 0.14 278 / 0.18)',
+            background: hasSession ? 'var(--accent)' : 'var(--fg-4)',
+            boxShadow: hasSession ? '0 0 0 3px oklch(0.48 0.14 278 / 0.18)' : 'none',
           }} />
           <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--fg)' }}>Socratic tutor</span>
           <span style={{ color: 'var(--fg-4)', fontSize: 12 }}>— guides, never gives</span>
@@ -125,8 +108,18 @@ export function ChatPanel({ sessionId: _sessionId, messages: _apiMessages }: Cha
           display: 'flex', flexDirection: 'column', gap: 18,
         }}
       >
-        {messages.map((msg, i) => (
-          <Message key={i} msg={msg} onChip={send} />
+        {!hasSession && (
+          <div style={{ textAlign: 'center', color: 'var(--fg-4)', fontSize: 13, marginTop: 24 }}>
+            Select a problem to start a session.
+          </div>
+        )}
+        {hasSession && messages.length === 0 && !typing && (
+          <div style={{ textAlign: 'center', color: 'var(--fg-4)', fontSize: 13, marginTop: 24 }}>
+            Ask a question or paste your code — the tutor will guide you.
+          </div>
+        )}
+        {messages.map((msg) => (
+          <Message key={msg.id} msg={msg} onChip={send} />
         ))}
         {typing && <TypingIndicator />}
       </div>
@@ -137,7 +130,8 @@ export function ChatPanel({ sessionId: _sessionId, messages: _apiMessages }: Cha
           value={draft}
           onChange={setDraft}
           onSend={send}
-          placeholder={MODE_PLACEHOLDER[mode]}
+          placeholder={hasSession ? MODE_PLACEHOLDER[mode] : 'Select a problem to chat…'}
+          disabled={!hasSession || sendMutation.isPending}
         />
       </div>
     </section>
@@ -172,8 +166,8 @@ function ModeSwitch({ mode, onChange }: { mode: TutorMode; onChange: (m: TutorMo
   )
 }
 
-function Message({ msg, onChip }: { msg: ChatMessage; onChip: (text: string) => void }) {
-  const isTutor = msg.role === 'tutor'
+function Message({ msg, onChip }: { msg: ApiMessage; onChip: (text: string) => void }) {
+  const isTutor = msg.role === 'assistant'
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '26px 1fr', gap: 10, maxWidth: 760 }}>
       <Avatar role={msg.role} />
@@ -184,22 +178,49 @@ function Message({ msg, onChip }: { msg: ChatMessage; onChip: (text: string) => 
             color: isTutor ? 'var(--accent-fg)' : 'var(--fg)',
             letterSpacing: '-0.005em',
           }}>
-            {isTutor ? 'think · tutor' : 'You'}
+            {isTutor ? 'Crux tutor' : 'You'}
           </span>
-          <span style={{ fontSize: 11, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>{msg.time}</span>
+          <span style={{ fontSize: 11, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>
+            {fmtTime(msg.createdAt)}
+          </span>
         </div>
         <Bubble isTutor={isTutor}>
-          {msg.body.map((part, i) => (
-            <MessagePart key={i} part={part} onChip={onChip} isTutor={isTutor} />
-          ))}
+          <MessageContent content={msg.content} isTutor={isTutor} onChip={onChip} />
         </Bubble>
       </div>
     </div>
   )
 }
 
-function Avatar({ role }: { role: 'tutor' | 'user' }) {
-  if (role === 'tutor') {
+function MessageContent({ content, isTutor, onChip }: { content: string; isTutor: boolean; onChip: (t: string) => void }) {
+  const parts = content.split(/(```[\s\S]*?```|`[^`]+`)/)
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith('```')) {
+          const code = part.replace(/^```\w*\n?/, '').replace(/```$/, '')
+          return (
+            <pre key={i} style={{
+              margin: '8px 0', padding: '8px 10px',
+              background: 'var(--bg-inset)', borderRadius: 7,
+              fontFamily: 'var(--mono)', fontSize: 12,
+              color: 'var(--fg)', overflowX: 'auto',
+            }}>
+              <code>{code}</code>
+            </pre>
+          )
+        }
+        if (part.startsWith('`')) {
+          return <code key={i} style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--accent-fg)' }}>{part.slice(1, -1)}</code>
+        }
+        return <span key={i} style={{ color: isTutor ? 'var(--fg)' : 'var(--fg-2)', whiteSpace: 'pre-wrap' }}>{part}</span>
+      })}
+    </>
+  )
+}
+
+function Avatar({ role }: { role: 'user' | 'assistant' }) {
+  if (role === 'assistant') {
     return (
       <div style={{
         width: 22, height: 22, borderRadius: '50%',
@@ -221,7 +242,7 @@ function Avatar({ role }: { role: 'tutor' | 'user' }) {
       background: 'linear-gradient(135deg, oklch(0.55 0.12 30), oklch(0.45 0.13 350))',
       color: 'white',
     }}>
-      M
+      Y
     </div>
   )
 }
@@ -241,55 +262,6 @@ function Bubble({ children, isTutor }: { children: React.ReactNode; isTutor: boo
   )
 }
 
-function MessagePart({ part, onChip, isTutor }: { part: MessagePart; onChip: (t: string) => void; isTutor: boolean }) {
-  if (part.type === 'text') {
-    return (
-      <p style={{
-        margin: 0, marginTop: 0,
-        color: isTutor ? 'var(--fg)' : 'var(--fg-2)',
-      }}
-        className="msg-p"
-      >
-        {part.text}
-      </p>
-    )
-  }
-  if (part.type === 'quote') {
-    return (
-      <blockquote style={{
-        margin: '8px 0', padding: '8px 11px',
-        borderLeft: '2px solid var(--accent)',
-        background: 'oklch(0.30 0.06 278 / 0.20)',
-        borderRadius: '0 6px 6px 0',
-        fontStyle: 'italic', color: 'var(--fg)', fontSize: 13,
-      }}>
-        {part.text}
-      </blockquote>
-    )
-  }
-  if (part.type === 'chips') {
-    return (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-        {part.items.map((item) => (
-          <button
-            key={item}
-            onClick={() => onChip(item)}
-            style={{
-              background: 'var(--bg-3)', border: '1px solid var(--border)',
-              color: 'var(--fg-2)', fontSize: 11.5,
-              padding: '4px 10px', borderRadius: 999,
-              cursor: 'pointer',
-            }}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
-    )
-  }
-  return null
-}
-
 function TypingIndicator() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '26px 1fr', gap: 10 }}>
@@ -305,7 +277,7 @@ function TypingIndicator() {
       </div>
       <div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-fg)' }}>think · tutor</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-fg)' }}>Crux tutor</span>
           <span style={{ fontSize: 11, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>now</span>
         </div>
         <div style={{
@@ -335,22 +307,25 @@ function BounceDot({ delay }: { delay: number }) {
 }
 
 function ComposerShell({
-  value, onChange, onSend, placeholder,
+  value, onChange, onSend, placeholder, disabled,
 }: {
   value: string
   onChange: (v: string) => void
   onSend: (v: string) => void
   placeholder: string
+  disabled?: boolean
 }) {
   return (
     <div style={{
       background: 'var(--bg-2)', border: '1px solid var(--border)',
       borderRadius: 10, padding: '8px 10px 6px',
+      opacity: disabled ? 0.6 : 1,
     }}>
       <textarea
         rows={1}
         placeholder={placeholder}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
@@ -362,7 +337,7 @@ function ComposerShell({
           width: '100%', background: 'transparent', border: 0, outline: 'none',
           resize: 'none', fontFamily: 'var(--sans)', fontSize: 13,
           color: 'var(--fg)', lineHeight: 1.5, minHeight: 22, maxHeight: 160,
-          padding: '2px 0',
+          padding: '2px 0', cursor: disabled ? 'not-allowed' : 'text',
         }}
       />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
@@ -376,16 +351,16 @@ function ComposerShell({
           </span>
           <button
             onClick={() => onSend(value)}
-            disabled={!value.trim()}
+            disabled={!value.trim() || disabled}
             style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: 28, height: 28, borderRadius: 7,
-              border: value.trim() ? '1px solid oklch(0.55 0.15 278 / 0.5)' : '1px solid var(--border)',
-              background: value.trim()
+              border: value.trim() && !disabled ? '1px solid oklch(0.55 0.15 278 / 0.5)' : '1px solid var(--border)',
+              background: value.trim() && !disabled
                 ? 'linear-gradient(180deg, oklch(0.5 0.16 278), oklch(0.43 0.15 278))'
                 : 'var(--bg-3)',
-              color: value.trim() ? 'white' : 'var(--fg-4)',
-              cursor: value.trim() ? 'pointer' : 'not-allowed',
+              color: value.trim() && !disabled ? 'white' : 'var(--fg-4)',
+              cursor: value.trim() && !disabled ? 'pointer' : 'not-allowed',
             }}
           >
             <SendIcon />
