@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { TopBar } from './components/layout/TopBar'
 import { StatusBar } from './components/layout/StatusBar'
@@ -8,6 +8,7 @@ import { CodeEditor } from './components/editor/CodeEditor'
 import { ChatPanel } from './components/chat/ChatPanel'
 import { AuthScreen } from './components/auth/AuthScreen'
 import { useAuth, signOut } from './lib/auth'
+import { useSession } from './lib/useSession'
 import { api } from './lib/api'
 import type { ApiProblemDetail } from './lib/api'
 
@@ -23,6 +24,15 @@ function App() {
     enabled: !!selectedSlug,
   })
 
+  const { session, sessionDetail, saveCode, isSaving } = useSession(problem?.id ?? null)
+
+  // When session loads, initialise editor with saved code (or starter code)
+  useEffect(() => {
+    if (session) {
+      setCode(session.currentCode || problem?.starterCode || '')
+    }
+  }, [session?.id])
+
   function handleSelectProblem(slug: string) {
     setSelectedSlug(slug)
     setCode('')
@@ -33,12 +43,17 @@ function App() {
     setCode('')
   }
 
+  function handleCodeChange(newCode: string) {
+    setCode(newCode)
+    saveCode(newCode)
+  }
+
   const handleRun = () => {
     setRunState('Running tests…')
     setTimeout(() => setRunState('Done'), 900)
   }
 
-  const displayCode = problem ? (code || problem.starterCode) : code
+  const displayCode = code || problem?.starterCode || ''
   const activeLine = 1
 
   if (loading) {
@@ -81,16 +96,16 @@ function App() {
           minHeight: 0,
           minWidth: 0,
         }}>
-          <CodeEditor code={displayCode} onChange={setCode} onRun={handleRun} />
+          <CodeEditor code={displayCode} onChange={handleCodeChange} onRun={handleRun} />
           <div style={{ background: 'var(--border-soft)' }} />
-          <ChatPanel />
+          <ChatPanel sessionId={session?.id} messages={sessionDetail?.messages} />
         </div>
       </main>
 
       <StatusBar
         activeLine={activeLine}
         totalLines={displayCode.split('\n').length}
-        savedAt="just now"
+        savedAt={isSaving ? 'Saving…' : 'Saved'}
         runState={runState}
       />
     </div>
