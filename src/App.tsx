@@ -2,8 +2,23 @@ import { useState, useEffect } from 'react'
 import { TopBar } from './components/layout/TopBar'
 import { StatusBar } from './components/layout/StatusBar'
 import { ProblemPanel } from './components/problem/ProblemPanel'
+import { CodeEditor } from './components/editor/CodeEditor'
+
+const INITIAL_CODE = `class Solution:
+    def lengthOfLongestSubstring(self, s: str) -> int:
+        # brute force — check every substring
+        longest = 0
+        for i in range(len(s)):
+            for j in range(i, len(s)):
+                window = s[i:j+1]
+                if len(set(window)) == len(window):
+                    longest = max(longest, j - i + 1)
+        return longest
+
+# TODO: there has to be a faster way…`
 
 function App() {
+  const [code, setCode] = useState(INITIAL_CODE)
   const [activeLine, setActiveLine] = useState(8)
   const [runState, setRunState] = useState('Last run: 142ms · 6/6 tests passed')
 
@@ -47,19 +62,7 @@ function App() {
           minHeight: 0,
           minWidth: 0,
         }}>
-          <div style={{
-            background: 'var(--bg-1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--fg-4)',
-            fontSize: 13,
-            fontFamily: 'var(--mono)',
-          }}
-            onClick={handleRun}
-          >
-            code editor
-          </div>
+          <CodeEditor code={code} onChange={setCode} onRun={handleRun} />
           <div style={{ background: 'var(--border-soft)' }} />
           <div style={{
             background: 'var(--bg-1)',
@@ -77,7 +80,7 @@ function App() {
 
       <StatusBar
         activeLine={activeLine}
-        totalLines={12}
+        totalLines={code.split('\n').length}
         savedAt="just now"
         runState={runState}
       />
