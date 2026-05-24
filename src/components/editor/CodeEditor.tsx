@@ -11,9 +11,10 @@ interface CodeEditorProps {
   code: string
   onChange: (code: string) => void
   onRun?: () => void
+  isRunning?: boolean
 }
 
-export function CodeEditor({ code, onChange, onRun }: CodeEditorProps) {
+export function CodeEditor({ code, onChange, onRun, isRunning }: CodeEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
 
@@ -104,24 +105,30 @@ export function CodeEditor({ code, onChange, onRun }: CodeEditorProps) {
 
           <button
             onClick={onRun}
+            disabled={isRunning}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 7,
-              background: 'linear-gradient(180deg, oklch(0.52 0.16 278), oklch(0.46 0.16 278))',
-              color: 'white',
-              border: '1px solid oklch(0.62 0.16 278 / 0.6)',
+              background: isRunning
+                ? 'var(--bg-3)'
+                : 'linear-gradient(180deg, oklch(0.52 0.16 278), oklch(0.46 0.16 278))',
+              color: isRunning ? 'var(--fg-4)' : 'white',
+              border: isRunning ? '1px solid var(--border)' : '1px solid oklch(0.62 0.16 278 / 0.6)',
               borderRadius: 7, padding: '5px 11px 5px 10px',
-              fontSize: 12.5, fontWeight: 500, cursor: 'pointer',
-              boxShadow: '0 1px 0 oklch(0.7 0.15 278 / 0.3) inset, 0 1px 2px rgba(0,0,0,0.4)',
+              fontSize: 12.5, fontWeight: 500,
+              cursor: isRunning ? 'not-allowed' : 'pointer',
+              boxShadow: isRunning ? 'none' : '0 1px 0 oklch(0.7 0.15 278 / 0.3) inset, 0 1px 2px rgba(0,0,0,0.4)',
             }}
           >
             <PlayIcon />
-            <span>Run</span>
-            <kbd style={{
-              fontFamily: 'var(--mono)', fontSize: 10.5,
-              background: 'rgba(255,255,255,0.13)',
-              borderRadius: 4, padding: '1px 5px',
-              color: 'oklch(0.95 0.05 278)',
-            }}>⌘↵</kbd>
+            <span>{isRunning ? 'Running…' : 'Run'}</span>
+            {!isRunning && (
+              <kbd style={{
+                fontFamily: 'var(--mono)', fontSize: 10.5,
+                background: 'rgba(255,255,255,0.13)',
+                borderRadius: 4, padding: '1px 5px',
+                color: 'oklch(0.95 0.05 278)',
+              }}>⌘↵</kbd>
+            )}
           </button>
         </div>
       </div>

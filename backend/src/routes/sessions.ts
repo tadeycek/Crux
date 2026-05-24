@@ -90,3 +90,59 @@ sessionsRouter.post('/:id/complete', async (req: AuthRequest, res) => {
     .where(and(eq(sessions.id, req.params.id), eq(sessions.userId, req.userId!)))
   res.json({ ok: true })
 })
+
+const PISTON_LANGUAGES: Record<string, { language: string; version: string }> = {
+  python:     { language: 'python',     version: '3.10.0' },
+  javascript: { language: 'javascript', version: '18.15.0' },
+  java:       { language: 'java',       version: '15.0.2' },
+}
+
+// POST /api/sessions/:id/run — execute code via Piston
+sessionsRouter.post('/:id/run', async (req: AuthRequest, res) => {
+  const { code, language = 'python' } = req.body as { code: string; language?: string }
+
+  if (!code) {
+    res.status(400).json({ error: 'code required' })
+    return
+  }
+
+  const lang = PISTON_LANGUAGES[language]
+  if (!lang) {
+    res.status(400).json({ error: `Unsupported language: ${language}` })
+    return
+  }
+
+  // Verify session belongs to user
+  const session = await db.select().from(sessions)
+    .where(and(eq(sessions.id, req.params.id), eq(sessions.userId, req.userId!)))
+    .limit(1)
+  if (!session.length) {
+    res.status(404).json({ error: 'Session not found' })
+    return
+  }
+
+  const pistonRes = await fetch('https://emkc.org/api/v2/piston/execute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      language: lang.language,
+      version: lang.version,
+      files: [{ content: code }],
+    }),
+  })
+
+  if (!pistonRes.ok) {
+    res.status(502).json({ error: 'Code execution service unavailable' })
+    return
+  }
+
+  const result = await pistonRes.json() as {
+    run: { stdout: string; stderr: string; code: number }
+  }
+
+  res.json({
+    stdout: result.run.stdout,
+    stderr: result.run.stderr,
+    exitCode: result.run.code,
+  })
+})

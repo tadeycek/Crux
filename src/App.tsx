@@ -1,22 +1,23 @@
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { TopBar } from './components/layout/TopBar'
 import { StatusBar } from './components/layout/StatusBar'
 import { ProblemPanel } from './components/problem/ProblemPanel'
 import { ProblemList } from './components/problem/ProblemList'
 import { CodeEditor } from './components/editor/CodeEditor'
+import { OutputPanel } from './components/editor/OutputPanel'
 import { ChatPanel } from './components/chat/ChatPanel'
 import { AuthScreen } from './components/auth/AuthScreen'
 import { useAuth, signOut } from './lib/auth'
 import { useSession } from './lib/useSession'
 import { api } from './lib/api'
-import type { ApiProblemDetail } from './lib/api'
+import type { ApiProblemDetail, ApiRunResult } from './lib/api'
 
 function App() {
   const { user, loading } = useAuth()
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null)
   const [code, setCode] = useState('')
-  const [runState, setRunState] = useState('Ready')
+  const [runResult, setRunResult] = useState<ApiRunResult | null>(null)
 
   const { data: problem } = useQuery<ApiProblemDetail>({
     queryKey: ['problem', selectedSlug],
@@ -48,9 +49,14 @@ function App() {
     saveCode(newCode)
   }
 
+  const runMutation = useMutation({
+    mutationFn: () => api.sessions.run(session!.id, code, 'python'),
+    onSuccess: (data) => setRunResult(data),
+  })
+
   const handleRun = () => {
-    setRunState('Running tests…')
-    setTimeout(() => setRunState('Done'), 900)
+    if (!session) return
+    runMutation.mutate()
   }
 
   const displayCode = code || problem?.starterCode || ''
@@ -92,11 +98,22 @@ function App() {
 
         <div style={{
           display: 'grid',
-          gridTemplateRows: 'minmax(0, 1.15fr) 1px minmax(0, 1fr)',
+          gridTemplateColumns: 'minmax(0, 1fr) 1px minmax(280px, 380px)',
           minHeight: 0,
           minWidth: 0,
         }}>
-          <CodeEditor code={displayCode} onChange={handleCodeChange} onRun={handleRun} />
+          {/* editor + output stacked */}
+          <div style={{ display: 'grid', gridTemplateRows: 'minmax(0, 1.4fr) 1px minmax(120px, 220px)', minHeight: 0 }}>
+            <CodeEditor
+              code={displayCode}
+              onChange={handleCodeChange}
+              onRun={handleRun}
+              isRunning={runMutation.isPending}
+            />
+            <div style={{ background: 'var(--border-soft)' }} />
+            <OutputPanel result={runResult} isRunning={runMutation.isPending} />
+          </div>
+
           <div style={{ background: 'var(--border-soft)' }} />
           <ChatPanel sessionId={session?.id} messages={sessionDetail?.messages} />
         </div>
@@ -106,7 +123,7 @@ function App() {
         activeLine={activeLine}
         totalLines={displayCode.split('\n').length}
         savedAt={isSaving ? 'Saving…' : 'Saved'}
-        runState={runState}
+        isRunning={runMutation.isPending}
       />
     </div>
   )

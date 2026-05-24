@@ -51,6 +51,11 @@ export const api = {
       }),
     complete: (id: string) =>
       request<{ ok: boolean }>(`/api/sessions/${id}/complete`, { method: 'POST' }),
+    run: (id: string, code: string, language: string) =>
+      request<ApiRunResult>(`/api/sessions/${id}/run`, {
+        method: 'POST',
+        body: JSON.stringify({ code, language }),
+      }),
   },
   chat: {
     send: (sessionId: string, content: string) =>
@@ -103,4 +108,10 @@ export interface ApiMessage {
 
 export interface ApiSessionDetail extends ApiSession {
   messages: ApiMessage[]
+}
+
+export interface ApiRunResult {
+  stdout: string
+  stderr: string
+  exitCode: number
 }
