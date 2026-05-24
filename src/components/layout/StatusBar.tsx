@@ -4,10 +4,10 @@ interface StatusBarProps {
   activeLine: number
   totalLines: number
   savedAt: string
-  runState: string
+  isRunning?: boolean
 }
 
-export function StatusBar({ activeLine, totalLines, savedAt, runState }: StatusBarProps) {
+export function StatusBar({ activeLine, totalLines, savedAt, isRunning }: StatusBarProps) {
   return (
     <footer style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -40,7 +40,9 @@ export function StatusBar({ activeLine, totalLines, savedAt, runState }: StatusB
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ whiteSpace: 'nowrap' }}>{runState}</span>
+        <span style={{ whiteSpace: 'nowrap', color: isRunning ? 'var(--warn)' : 'var(--fg-3)' }}>
+          {isRunning ? 'Running…' : 'Ready'}
+        </span>
         <Divider />
         <span style={{ whiteSpace: 'nowrap' }}>Ln {activeLine}, Col 1 · {totalLines} lines</span>
         <Divider />
