@@ -1,13 +1,34 @@
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { LogoIcon, SearchIcon } from '../icons'
+import { AvatarMenu } from './AvatarMenu'
+import { api } from '../../lib/api'
+import type { SettingsSection } from '../settings/SettingsPage'
 
 const NAV_ITEMS = ['Practice', 'Concepts', 'Playlists', 'Progress'] as const
 
 interface TopBarProps {
   userEmail?: string
-  onSignOut?: () => void
+  onOpenSettings?: (section: SettingsSection) => void
+  activeView?: string
+  onNavChange?: (view: string) => void
+  searchQuery?: string
+  onSearchChange?: (q: string) => void
 }
 
-export function TopBar({ userEmail, onSignOut }: TopBarProps) {
+export function TopBar({ userEmail, onOpenSettings, activeView = 'practice', onNavChange, searchQuery = '', onSearchChange }: TopBarProps) {
+  const [copied, setCopied] = useState(false)
+  const { data: progressSummary } = useQuery({
+    queryKey: ['progress-summary'],
+    queryFn: () => api.progress.summary(),
+    staleTime: 5 * 60_000,
+  })
+
+  function handleShare() {
+    navigator.clipboard.writeText(window.location.href)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
   return (
     <header style={{
       display: 'grid',
@@ -15,7 +36,7 @@ export function TopBar({ userEmail, onSignOut }: TopBarProps) {
       alignItems: 'center',
       padding: '0 14px',
       gap: '16px',
-      background: 'linear-gradient(180deg, #1a1d23 0%, #181a20 100%)',
+      background: 'var(--bg-1)',
       borderBottom: '1px solid var(--border-soft)',
       userSelect: 'none',
     }}>
@@ -34,24 +55,27 @@ export function TopBar({ userEmail, onSignOut }: TopBarProps) {
         </div>
 
         <nav style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item}
-              style={{
-                background: item === 'Practice' ? 'var(--bg-2)' : 'transparent',
-                border: item === 'Practice' ? '1px solid var(--border)' : '1px solid transparent',
-                cursor: 'pointer',
-                color: item === 'Practice' ? 'var(--fg)' : 'var(--fg-3)',
-                padding: '6px 10px',
-                borderRadius: 7,
-                fontSize: 13,
-                fontWeight: 500,
-                boxShadow: item === 'Practice' ? 'inset 0 0 0 0' : 'none',
-              }}
-            >
-              {item}
-            </button>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const isActive = activeView === item.toLowerCase()
+            return (
+              <button
+                key={item}
+                onClick={() => onNavChange?.(item.toLowerCase())}
+                style={{
+                  background: isActive ? 'var(--bg-2)' : 'transparent',
+                  border: isActive ? '1px solid var(--border)' : '1px solid transparent',
+                  cursor: 'pointer',
+                  color: isActive ? 'var(--fg)' : 'var(--fg-3)',
+                  padding: '6px 10px',
+                  borderRadius: 7,
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                {item}
+              </button>
+            )
+          })}
         </nav>
       </div>
 
@@ -66,16 +90,27 @@ export function TopBar({ userEmail, onSignOut }: TopBarProps) {
           padding: '6px 10px',
           color: 'var(--fg-3)',
           fontSize: 13,
-          cursor: 'text',
         }}>
-          <span style={{ opacity: 0.55, display: 'inline-flex' }}><SearchIcon /></span>
-          <span style={{ flex: 1 }}>Jump to problem, concept, or session…</span>
-          <kbd style={{
-            fontFamily: 'var(--mono)', fontSize: 11,
-            background: '#2a2d36', color: 'var(--fg-2)',
-            padding: '1px 6px', borderRadius: 5,
-            border: '1px solid var(--border)', borderBottomWidth: 2,
-          }}>⌘K</kbd>
+          <span style={{ opacity: 0.55, display: 'inline-flex', flexShrink: 0 }}><SearchIcon /></span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => onSearchChange?.(e.target.value)}
+            placeholder="Jump to problem, concept, or session…"
+            style={{
+              flex: 1, background: 'transparent', border: 0, outline: 'none',
+              color: 'var(--fg)', fontSize: 13, fontFamily: 'inherit',
+            }}
+          />
+          {!searchQuery && (
+            <kbd style={{
+              fontFamily: 'var(--mono)', fontSize: 11,
+              background: 'var(--bg-3)', color: 'var(--fg-2)',
+              padding: '1px 6px', borderRadius: 5,
+              border: '1px solid var(--border)', borderBottomWidth: 2,
+              flexShrink: 0,
+            }}>⌘K</kbd>
+          )}
         </div>
       </div>
 
@@ -87,32 +122,26 @@ export function TopBar({ userEmail, onSignOut }: TopBarProps) {
           padding: '4px 9px', borderRadius: 999, fontSize: 12,
         }}>
           <span style={{ color: 'var(--warn)', fontSize: 10 }}>▲</span>
-          <span style={{ color: 'var(--fg)', fontWeight: 600 }}>12</span>
+          <span style={{ color: 'var(--fg)', fontWeight: 600 }}>{progressSummary?.streak ?? 0}</span>
           <span style={{ color: 'var(--fg-3)' }}>day streak</span>
         </div>
 
-        <button style={{
-          background: 'transparent', border: '1px solid transparent',
-          color: 'var(--fg-2)', borderRadius: 7, padding: '5px 10px',
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          cursor: 'pointer', fontSize: 13,
-        }}>
-          Share session
+        <button
+          onClick={handleShare}
+          style={{
+            background: 'transparent', border: '1px solid transparent',
+            color: copied ? 'var(--ok)' : 'var(--fg-2)', borderRadius: 7, padding: '5px 10px',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            cursor: 'pointer', fontSize: 13, transition: 'color 0.2s',
+          }}
+        >
+          {copied ? 'Copied!' : 'Share session'}
         </button>
 
-        <div style={{
-          width: 26, height: 26, borderRadius: '50%',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 12, fontWeight: 600,
-          background: 'linear-gradient(135deg, oklch(0.55 0.12 30), oklch(0.45 0.13 350))',
-          color: 'white', flexShrink: 0,
-          cursor: onSignOut ? 'pointer' : 'default',
-          title: userEmail,
-        }}
-          onClick={onSignOut}
-        >
-          {userEmail ? userEmail[0].toUpperCase() : 'M'}
-        </div>
+        <AvatarMenu
+          userEmail={userEmail}
+          onOpenSettings={onOpenSettings ?? (() => {})}
+        />
       </div>
     </header>
   )

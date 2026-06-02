@@ -1,28 +1,49 @@
-import { useState, FormEvent } from 'react'
-import { signIn, signUp } from '../../lib/auth'
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { signIn, signUp, resetPassword } from '../../lib/auth'
 
-type Mode = 'login' | 'signup'
+type Mode = 'login' | 'signup' | 'forgot'
 
 export function AuthScreen() {
   const [mode, setMode] = useState<Mode>('login')
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')   // email or username on login
+  const [email, setEmail] = useState('')              // signup only
+  const [username, setUsername] = useState('')        // signup only
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  function switchMode(next: Mode) {
+    setMode(next)
+    setError(null)
+    setInfo(null)
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
     setInfo(null)
+
+    if (mode === 'signup') {
+      if (!username.trim()) { setError('Username is required'); return }
+      if (username.includes('@')) { setError('Username cannot contain @'); return }
+      if (password !== confirmPassword) { setError('Passwords do not match'); return }
+    }
+
     setLoading(true)
     try {
       if (mode === 'login') {
-        await signIn(email, password)
-      } else {
-        await signUp(email, password)
+        await signIn(identifier, password)
+      } else if (mode === 'signup') {
+        await signUp(email, password, username.trim())
         setInfo('Check your email to confirm your account, then log in.')
-        setMode('login')
+        switchMode('login')
+      } else {
+        await resetPassword(email)
+        setInfo('Password reset email sent — check your inbox.')
+        switchMode('login')
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -59,29 +80,79 @@ export function AuthScreen() {
             <span style={{ color: 'var(--accent)' }}>✦</span> Crux
           </div>
           <div style={{ marginTop: 6, fontSize: 13, color: 'var(--fg-3)' }}>
-            {mode === 'login' ? 'Sign in to continue' : 'Create your account'}
+            {mode === 'login' ? 'Sign in to continue' : mode === 'signup' ? 'Create your account' : 'Reset your password'}
           </div>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            style={inputStyle}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            minLength={6}
-            style={inputStyle}
-          />
+          {mode === 'login' ? (
+            <input
+              type="text"
+              placeholder="Email or username"
+              value={identifier}
+              onChange={e => setIdentifier(e.target.value)}
+              required
+              autoComplete="username"
+              style={inputStyle}
+            />
+          ) : (
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              style={inputStyle}
+            />
+          )}
+
+          {mode === 'signup' && (
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              required
+              autoComplete="username"
+              style={inputStyle}
+            />
+          )}
+
+          {(mode === 'login' || mode === 'signup') && (
+            <>
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                minLength={6}
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                style={inputStyle}
+              />
+              {mode === 'login' && (
+                <div style={{ textAlign: 'right', marginTop: -4 }}>
+                  <button type="button" onClick={() => switchMode('forgot')} style={{ ...linkStyle, fontSize: 12 }}>
+                    Forgot password?
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {mode === 'signup' && (
+            <input
+              type="password"
+              placeholder="Repeat password"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              required
+              minLength={6}
+              autoComplete="new-password"
+              style={inputStyle}
+            />
+          )}
 
           {error && (
             <div style={{ fontSize: 12, color: 'var(--danger)', padding: '6px 0' }}>
@@ -111,7 +182,7 @@ export function AuthScreen() {
               fontFamily: 'inherit',
             }}
           >
-            {loading ? '…' : mode === 'login' ? 'Sign in' : 'Sign up'}
+            {loading ? '…' : mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Sign up' : 'Send reset email'}
           </button>
         </form>
 
@@ -119,15 +190,11 @@ export function AuthScreen() {
         <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--fg-3)' }}>
           {mode === 'login' ? (
             <>No account?{' '}
-              <button onClick={() => { setMode('signup'); setError(null); setInfo(null) }} style={linkStyle}>
-                Sign up
-              </button>
+              <button onClick={() => switchMode('signup')} style={linkStyle}>Sign up</button>
             </>
           ) : (
-            <>Already have one?{' '}
-              <button onClick={() => { setMode('login'); setError(null); setInfo(null) }} style={linkStyle}>
-                Sign in
-              </button>
+            <>
+              <button onClick={() => switchMode('login')} style={linkStyle}>Back to sign in</button>
             </>
           )}
         </div>

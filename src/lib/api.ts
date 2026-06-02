@@ -58,11 +58,35 @@ export const api = {
       }),
   },
   chat: {
-    send: (sessionId: string, content: string) =>
+    send: (sessionId: string, content: string, mode = 'Socratic', language = 'python') =>
       request<{ userMessage: ApiMessage; assistantMessage: ApiMessage }>(
         `/api/chat/${sessionId}`,
-        { method: 'POST', body: JSON.stringify({ content }) },
+        { method: 'POST', body: JSON.stringify({ content, mode, language }) },
       ),
+  },
+  progress: {
+    summary: () => request<ApiProgressSummary>('/api/progress/summary'),
+  },
+  concepts: {
+    getProgress: () => request<Record<string, 'completed' | 'in-progress'>>('/api/concepts/progress'),
+    setProgress: (slug: string, status: 'completed' | 'in-progress') =>
+      request<{ ok: boolean }>(`/api/concepts/progress/${slug}`, {
+        method: 'POST',
+        body: JSON.stringify({ status }),
+      }),
+    deleteProgress: (slug: string) =>
+      request<{ ok: boolean }>(`/api/concepts/progress/${slug}`, { method: 'DELETE' }),
+  },
+  playlists: {
+    list: () => request<ApiPlaylist[]>('/api/playlists'),
+  },
+  billing: {
+    status: () => request<ApiBillingStatus>('/api/billing/status'),
+    checkout: (plan: 'monthly' | 'yearly') =>
+      request<{ url: string }>('/api/billing/checkout', {
+        method: 'POST',
+        body: JSON.stringify({ plan }),
+      }),
   },
 }
 
@@ -114,4 +138,38 @@ export interface ApiRunResult {
   stdout: string
   stderr: string
   exitCode: number
+}
+
+export interface ApiProgressSummary {
+  streak: number
+  activeDates: string[]
+  grid: number[]
+  problemsSolved: number
+  totalSessions: number
+}
+
+export interface ApiPlaylistProblem {
+  id: number
+  title: string
+  slug: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  description: string
+}
+
+export interface ApiBillingStatus {
+  subscriptionStatus: 'free' | 'pro'
+  isPro: boolean
+  aiMessagesToday: number
+  aiMessagesLimit: number | null
+  aiMessagesRemaining: number | null
+}
+
+export interface ApiPlaylist {
+  id: number
+  title: string
+  description: string
+  badge: string
+  difficulty: string
+  position: number
+  problems: ApiPlaylistProblem[]
 }

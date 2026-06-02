@@ -2,16 +2,20 @@ import OpenAI from 'openai'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-const SYSTEM_PROMPT = `You are Crux, a Socratic programming tutor. Your job is to help students learn by guiding them to discover answers themselves — never give solutions directly.
+const LANGUAGE_FENCE: Record<string, string> = {
+  python: 'python',
+  javascript: 'js',
+  java: 'java',
+  cpp: 'cpp',
+}
 
-Rules:
-- Ask one focused question per response that nudges the student toward the next insight
-- When the student shares code, identify the first conceptual gap and ask about it
-- Never write working code for them; small illustrative snippets (2-3 lines) showing unrelated concepts are OK
-- Acknowledge what they got right before pointing to what needs work
-- If they ask "just tell me the answer", redirect: "What have you tried so far?"
-- Keep responses concise — 3 sentences max unless the student needs a concept explained
-- Adjust depth to their apparent level based on how they write and what they ask`
+const BASE_PROMPT = `You are Crux, a programming tutor. Keep responses concise — 3 sentences max unless explaining a concept.`
+
+const MODE_PROMPTS: Record<string, string> = {
+  Socratic: `Use the Socratic method: guide students to discover answers themselves. Ask one focused question per response that nudges toward the next insight. Never give solutions directly. Acknowledge what they got right before pointing to what needs work. If they ask "just tell me the answer", redirect: "What have you tried so far?"`,
+  Hint: `Give a single specific hint — one sentence that nudges in the right direction without revealing the solution. If their approach is fundamentally wrong, say so briefly and point to the right data structure or algorithm concept.`,
+  Review: `Review the student's code. Point out correctness issues, edge cases they may have missed, and one concrete improvement. Be specific: name the line or pattern that's problematic. Don't rewrite their code — describe what to change.`,
+}
 
 export interface Message {
   role: 'user' | 'assistant'
@@ -23,13 +27,20 @@ export async function getAIResponse(
   problemTitle: string,
   problemDescription: string,
   currentCode: string,
+  mode: string = 'Socratic',
+  language: string = 'python',
 ): Promise<string> {
-  const contextBlock = `Problem: ${problemTitle}\n\nDescription:\n${problemDescription}\n\nStudent's current code:\n\`\`\`python\n${currentCode || '# (empty)'}\n\`\`\``
+  const fence = LANGUAGE_FENCE[language] ?? language
+  const modeInstructions = MODE_PROMPTS[mode] ?? MODE_PROMPTS.Socratic
+
+  const systemPrompt = `${BASE_PROMPT}\n\n${modeInstructions}\n\nAdjust depth to the student's apparent level based on how they write.`
+
+  const contextBlock = `Problem: ${problemTitle}\n\nDescription:\n${problemDescription}\n\nStudent's current code (${language}):\n\`\`\`${fence}\n${currentCode || '// (empty)'}\n\`\`\``
 
   const response = await openai.chat.completions.create({
     model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       { role: 'system', content: contextBlock },
       ...history,
     ],

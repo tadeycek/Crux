@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: crux
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free          # change to "starter" ($7/mo) to avoid cold starts
+    healthCheckPath: /health
+    autoDeploy: true    # redeploy automatically on every push to main
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+
+      # Fill these in the Render dashboard — never commit real values
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false

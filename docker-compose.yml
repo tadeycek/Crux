@@ -1,0 +1,28 @@
+# Local production test — mirrors exactly what runs on Render.
+# Run: docker compose up --build
+# Then open http://localhost:3001
+#
+# For active development, use the normal dev servers instead:
+#   npm run dev          (frontend on :5173)
+#   cd backend && npm run dev   (backend on :3001)
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "3001:3001"
+    env_file:
+      - backend/.env          # reuse your existing local .env
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

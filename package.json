@@ -7,10 +7,14 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:all": "npm run build && cd backend && npm run build",
+    "start": "cd backend && NODE_ENV=production node dist/app.js"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",
+    "@codemirror/lang-cpp": "^6.0.3",
+    "@codemirror/lang-javascript": "^6.2.5",
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/language": "^6.12.3",
     "@codemirror/state": "^6.6.0",

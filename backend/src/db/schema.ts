@@ -8,6 +8,9 @@ export const profiles = pgTable('profiles', {
   id: uuid('id').primaryKey(),
   username: text('username').unique(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  subscriptionStatus: text('subscription_status').notNull().default('free'),
+  aiMessagesToday: integer('ai_messages_today').notNull().default(0),
+  aiMessagesResetAt: timestamp('ai_messages_reset_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
 export const topics = pgTable('topics', {
@@ -50,3 +53,25 @@ export const messages = pgTable('messages', {
   content: text('content').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+export const conceptProgress = pgTable('concept_progress', {
+  userId: uuid('user_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+  conceptSlug: text('concept_slug').notNull(),
+  status: text('status').notNull().default('in-progress'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (t) => [primaryKey({ columns: [t.userId, t.conceptSlug] })])
+
+export const playlists = pgTable('playlists', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  badge: text('badge').notNull(),
+  difficulty: text('difficulty').notNull(),
+  position: integer('position').notNull().default(0),
+})
+
+export const playlistProblems = pgTable('playlist_problems', {
+  playlistId: integer('playlist_id').notNull().references(() => playlists.id, { onDelete: 'cascade' }),
+  problemId: integer('problem_id').notNull().references(() => problems.id, { onDelete: 'cascade' }),
+  position: integer('position').notNull().default(0),
+}, (t) => [primaryKey({ columns: [t.playlistId, t.problemId] })])

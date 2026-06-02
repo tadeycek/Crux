@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { db } from './client'
-import { topics, problems, problemTopics } from './schema'
+import { topics, problems, problemTopics, playlists, playlistProblems } from './schema'
 
 const topicData = [
   { name: 'Arrays', slug: 'arrays' },
@@ -11,6 +11,16 @@ const topicData = [
   { name: 'Recursion', slug: 'recursion' },
   { name: 'Trees', slug: 'trees' },
   { name: 'Sorting', slug: 'sorting' },
+  { name: 'Heaps & Priority Queues', slug: 'heaps' },
+  { name: 'Tries', slug: 'tries' },
+  { name: 'Bit Manipulation', slug: 'bit-manipulation' },
+  { name: 'Graphs', slug: 'graphs' },
+  { name: 'Greedy Algorithms', slug: 'greedy' },
+  { name: 'Union-Find / DSU', slug: 'union-find' },
+  { name: 'Object-Oriented Programming', slug: 'oop' },
+  { name: 'Operating Systems', slug: 'operating-systems' },
+  { name: 'Databases', slug: 'databases' },
+  { name: 'Computer Networks', slug: 'networks' },
 ]
 
 const problemData = [
@@ -163,6 +173,110 @@ In how many distinct ways can you climb to the top?`,
     ],
     topicSlugs: ['arrays', 'sorting'],
   },
+  {
+    title: 'Single Number',
+    slug: 'single-number',
+    difficulty: 'easy' as const,
+    description: `Given a **non-empty** array of integers \`nums\`, every element appears twice except for one. Find that single one.
+
+You must implement a solution with a linear runtime complexity and use only constant extra space.`,
+    starterCode: `def single_number(nums: list[int]) -> int:
+    # Your code here
+    pass`,
+    constraints: `- 1 ≤ nums.length ≤ 3 × 10⁴
+- -3 × 10⁴ ≤ nums[i] ≤ 3 × 10⁴
+- Each element in the array appears twice except for one element which appears only once.`,
+    examples: [
+      { input: 'nums = [2,2,1]', output: '1', explain: '1 is the only number that does not repeat.' },
+      { input: 'nums = [4,1,2,1,2]', output: '4', explain: '4 is the unique element.' },
+    ],
+    topicSlugs: ['arrays', 'bit-manipulation'],
+  },
+  {
+    title: 'Kth Largest Element in an Array',
+    slug: 'kth-largest-element-in-an-array',
+    difficulty: 'medium' as const,
+    description: `Given an integer array \`nums\` and an integer \`k\`, return the \`k\`th largest element in the array.
+
+Note that it is the \`k\`th largest element in the sorted order, not the \`k\`th distinct element.
+
+Can you solve it without sorting in O(n log k) or O(n) time?`,
+    starterCode: `def find_kth_largest(nums: list[int], k: int) -> int:
+    # Your code here
+    pass`,
+    constraints: `- 1 ≤ k ≤ nums.length ≤ 10⁵
+- -10⁴ ≤ nums[i] ≤ 10⁴`,
+    examples: [
+      { input: 'nums = [3,2,1,5,6,4], k = 2', output: '5', explain: 'The sorted array is [1,2,3,4,5,6] and the 2nd largest element is 5.' },
+      { input: 'nums = [3,2,3,1,2,4,5,5,6], k = 4', output: '4', explain: 'The sorted array is [1,2,2,3,3,4,5,5,6] and the 4th largest element is 4.' },
+    ],
+    topicSlugs: ['arrays', 'heaps', 'sorting'],
+  },
+  {
+    title: 'Implement Trie (Prefix Tree)',
+    slug: 'implement-trie',
+    difficulty: 'medium' as const,
+    description: `A **trie** (pronounced as "try") or **prefix tree** is a tree data structure used to efficiently store and retrieve keys in a dataset of strings. There are various applications of this data structure, such as autocomplete and spell checker.
+
+Implement the Trie class:
+- \`Trie()\` Initializes the trie object.
+- \`void insert(String word)\` Inserts the string \`word\` into the trie.
+- \`boolean search(String word)\` Returns \`true\` if the string \`word\` is in the trie (i.e., was inserted before), and \`false\` otherwise.
+- \`boolean startsWith(String prefix)\` Returns \`true\` if there is a previously inserted string \`word\` that has the prefix \`prefix\`, and \`false\` otherwise.`,
+    starterCode: `class Trie:
+    def __init__(self):
+        # Initialize your data structure here.
+        pass
+
+    def insert(self, word: str) -> None:
+        # Inserts a word into the trie.
+        pass
+
+    def search(self, word: str) -> bool:
+        # Returns if the word is in the trie.
+        pass
+
+    def starts_with(self, prefix: str) -> bool:
+        # Returns if there is any word in the trie that starts with the given prefix.
+        pass`,
+    constraints: `- 1 ≤ word.length, prefix.length ≤ 2000
+- word and prefix consist only of lowercase English letters.
+- At most 3 × 10⁴ calls in total will be made to insert, search, and startsWith.`,
+    examples: [
+      { input: 'trie = Trie(); trie.insert("apple"); trie.search("apple"); trie.search("app"); trie.starts_with("app")', output: 'True, False, True', explain: '"apple" is present, but "app" is not. However, "app" is a prefix of "apple".' },
+    ],
+    topicSlugs: ['trees', 'tries'],
+  },
+  {
+    title: 'Number of Islands',
+    slug: 'number-of-islands',
+    difficulty: 'medium' as const,
+    description: `Given an \`m x n\` 2D binary grid \`grid\` which represents a map of \`1\`s (land) and \`0\`s (water), return *the number of islands*.
+
+An **island** is surrounded by water and is formed by connecting adjacent lands horizontally or vertically. You may assume all four edges of the grid are all surrounded by water.`,
+    starterCode: `def num_islands(grid: list[list[str]]) -> int:
+    # Your code here
+    pass`,
+    constraints: `- m == grid.length
+- n == grid[i].length
+- 1 ≤ m, n ≤ 300
+- grid[i][j] is '0' or '1'.`,
+    examples: [
+      { input: `grid = [
+  ["1","1","1","1","0"],
+  ["1","1","0","1","0"],
+  ["1","1","0","0","0"],
+  ["0","0","0","0","0"]
+]`, output: '1', explain: 'All connected 1s form a single island.' },
+      { input: `grid = [
+  ["1","1","0","0","0"],
+  ["1","1","0","0","0"],
+  ["0","0","1","0","0"],
+  ["0","0","0","1","1"]
+]`, output: '3', explain: 'There are 3 distinct islands.' },
+    ],
+    topicSlugs: ['graphs'],
+  },
 ]
 
 async function seed() {
@@ -184,6 +298,61 @@ async function seed() {
       const topicId = topicMap.get(slug)
       if (topicId) {
         await db.insert(problemTopics).values({ problemId: inserted.id, topicId }).onConflictDoNothing()
+      }
+    }
+  }
+
+  console.log('Seeding playlists...')
+  const playlistData = [
+    {
+      title: 'Blind 75 Essentials',
+      description: 'The absolute most critical algorithms and data structures interview questions.',
+      badge: 'Essential',
+      difficulty: 'Mixed',
+      position: 0,
+      problemSlugs: ['two-sum', 'best-time-to-buy-and-sell-stock', 'longest-substring-without-repeating', 'merge-intervals'],
+    },
+    {
+      title: 'Graphs & Traversals Masterclass',
+      description: 'Master breadth-first, depth-first, and path connectivity searches on grid environments.',
+      badge: 'Core Algorithmic',
+      difficulty: 'Medium',
+      position: 1,
+      problemSlugs: ['number-of-islands'],
+    },
+    {
+      title: 'Dynamic Programming Boot Camp',
+      description: 'Conquer recursion, memoization grids, and optimization selection transitions.',
+      badge: 'Advanced Paradigms',
+      difficulty: 'Hard',
+      position: 2,
+      problemSlugs: ['climbing-stairs'],
+    },
+    {
+      title: 'Foundations & String Utilities',
+      description: 'Solidify your pointer operations, hashing lookups, and basic complexity metrics.',
+      badge: 'First Principles',
+      difficulty: 'Easy',
+      position: 3,
+      problemSlugs: ['valid-palindrome', 'group-anagrams'],
+    },
+  ]
+
+  const allProblems = await db.select().from(problems)
+  const slugToId = new Map(allProblems.map(p => [p.slug, p.id]))
+
+  for (const pl of playlistData) {
+    const { problemSlugs, ...playlistRow } = pl
+    const [inserted] = await db.insert(playlists).values(playlistRow).onConflictDoNothing().returning()
+    if (!inserted) {
+      console.log(`  skipped playlist (exists): ${pl.title}`)
+      continue
+    }
+    console.log(`  inserted playlist: ${pl.title}`)
+    for (let i = 0; i < problemSlugs.length; i++) {
+      const problemId = slugToId.get(problemSlugs[i])
+      if (problemId) {
+        await db.insert(playlistProblems).values({ playlistId: inserted.id, problemId, position: i }).onConflictDoNothing()
       }
     }
   }

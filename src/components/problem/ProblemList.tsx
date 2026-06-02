@@ -12,9 +12,10 @@ const DIFFICULTY_COLOR = {
 
 interface ProblemListProps {
   onSelect: (slug: string) => void
+  searchQuery?: string
 }
 
-export function ProblemList({ onSelect }: ProblemListProps) {
+export function ProblemList({ onSelect, searchQuery = '' }: ProblemListProps) {
   const [topicFilter, setTopicFilter] = useState<string>('')
   const [diffFilter, setDiffFilter] = useState<string>('')
 
@@ -23,13 +24,18 @@ export function ProblemList({ onSelect }: ProblemListProps) {
     queryFn: () => api.problems.topics(),
   })
 
-  const { data: problems = [], isLoading, isError } = useQuery<ApiProblem[]>({
+  const { data: rawProblems = [], isLoading, isError } = useQuery<ApiProblem[]>({
     queryKey: ['problems', topicFilter, diffFilter],
     queryFn: () => api.problems.list({
       topic: topicFilter || undefined,
       difficulty: diffFilter || undefined,
     }),
   })
+
+  const q = searchQuery.trim().toLowerCase()
+  const problems = q
+    ? rawProblems.filter(p => p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q))
+    : rawProblems
 
   return (
     <aside style={{

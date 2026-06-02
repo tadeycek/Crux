@@ -11,7 +11,7 @@ export function StatusBar({ activeLine, totalLines, savedAt, isRunning }: Status
   return (
     <footer style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      background: 'linear-gradient(180deg, #181a20 0%, #15171c 100%)',
+      background: 'var(--bg-1)',
       borderTop: '1px solid var(--border-soft)',
       padding: '0 12px',
       fontFamily: 'var(--mono)',
@@ -48,7 +48,7 @@ export function StatusBar({ activeLine, totalLines, savedAt, isRunning }: Status
         <Divider />
         <span style={{ whiteSpace: 'nowrap' }}>UTF-8 · LF · 4 spaces</span>
         <Divider />
-        <span style={{ whiteSpace: 'nowrap' }}>Saved {savedAt}</span>
+        <span style={{ whiteSpace: 'nowrap', color: savedAt === 'Save failed' ? 'var(--danger)' : 'inherit' }}>{savedAt}</span>
       </div>
     </footer>
   )

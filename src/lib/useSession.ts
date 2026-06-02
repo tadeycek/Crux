@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
 import type { ApiSession, ApiSessionDetail } from './api'
@@ -49,5 +49,6 @@ export function useSession(problemId: number | null) {
     saveCode,
     invalidate,
     isSaving: saveCodeMutation.isPending,
+    saveError: saveCodeMutation.isError,
   }
 }
