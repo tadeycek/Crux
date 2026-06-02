@@ -20,8 +20,22 @@ const isProd = process.env.NODE_ENV === 'production'
 const FRONTEND_DIST = path.resolve(__dirname, '../client')
 
 app.use(helmet({
-  contentSecurityPolicy: isProd ? undefined : false,
   crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: isProd ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: [
+        "'self'",
+        'https://*.supabase.co',
+        'https://emkc.org',
+        'https://api.openai.com',
+      ],
+    },
+  } : false,
 }))
 
 app.use(cors({
