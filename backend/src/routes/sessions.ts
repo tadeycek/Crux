@@ -2,8 +2,8 @@ import { Router } from 'express'
 import { db } from '../db/client'
 import { sessions, messages, problems, profiles } from '../db/schema'
 import { eq, and, desc } from 'drizzle-orm'
-import { createClient } from '@supabase/supabase-js'
 import { requireAuth, AuthRequest } from '../middleware/auth'
+import { supabaseAdmin } from '../lib/supabaseAdmin'
 import fs from 'fs'
 import path from 'path'
 import os from 'os'
@@ -17,11 +17,6 @@ const runLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many run requests — wait a minute.' },
 })
-
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 async function ensureProfile(userId: string) {
   const { data } = await supabaseAdmin.auth.admin.getUserById(userId)

@@ -1,14 +1,9 @@
 import { Router } from 'express'
-import { createClient } from '@supabase/supabase-js'
 import { db } from '../db/client'
 import { profiles } from '../db/schema'
 import { eq } from 'drizzle-orm'
 import { requireAuth, AuthRequest } from '../middleware/auth'
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { supabaseAdmin as supabase } from '../lib/supabaseAdmin'
 
 export const authRouter = Router()
 
