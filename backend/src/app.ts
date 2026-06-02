@@ -64,7 +64,7 @@ app.use('/api/billing', billingRouter)
 if (isProd) {
   app.use(express.static(FRONTEND_DIST))
   // SPA fallback: any non-API route returns index.html
-  app.get('*', (_req, res) => {
+  app.get('/{*path}', (_req, res) => {
     res.sendFile(path.join(FRONTEND_DIST, 'index.html'))
   })
 }
