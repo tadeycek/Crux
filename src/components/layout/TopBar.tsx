@@ -16,6 +16,8 @@ interface TopBarProps {
   onSearchChange?: (q: string) => void
 }
 
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.platform)
+
 export function TopBar({ userEmail, onOpenSettings, activeView = 'practice', onNavChange, searchQuery = '', onSearchChange }: TopBarProps) {
   const [copied, setCopied] = useState(false)
   const { data: progressSummary } = useQuery({
@@ -109,7 +111,7 @@ export function TopBar({ userEmail, onOpenSettings, activeView = 'practice', onN
               padding: '1px 6px', borderRadius: 5,
               border: '1px solid var(--border)', borderBottomWidth: 2,
               flexShrink: 0,
-            }}>⌘K</kbd>
+            }}>{isMac ? '⌘K' : 'Ctrl+K'}</kbd>
           )}
         </div>
       </div>

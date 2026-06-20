@@ -60,11 +60,35 @@ progressRouter.get('/summary', async (req: AuthRequest, res) => {
 
   const activeDates = Array.from(activeDateSet).sort()
 
+  // Collect up to 6 recent unique problem IDs (most recently touched first)
+  const seenProblemIds = new Set<number>()
+  const recentProblemIds: number[] = []
+  for (const s of allSessions) {
+    if (!seenProblemIds.has(s.problemId)) {
+      seenProblemIds.add(s.problemId)
+      recentProblemIds.push(s.problemId)
+      if (recentProblemIds.length >= 6) break
+    }
+  }
+
+  const recentProblems = recentProblemIds.length
+    ? await Promise.all(
+        recentProblemIds.map((id) =>
+          db.select({ id: problems.id, title: problems.title, slug: problems.slug })
+            .from(problems)
+            .where(eq(problems.id, id))
+            .limit(1)
+            .then((r) => r[0] ?? null),
+        ),
+      ).then((rows) => rows.filter(Boolean))
+    : []
+
   res.json({
     streak,
     activeDates,
     grid,
     problemsSolved,
     totalSessions: allSessions.length,
+    recentProblems,
   })
 })

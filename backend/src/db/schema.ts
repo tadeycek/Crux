@@ -9,6 +9,7 @@ export const profiles = pgTable('profiles', {
   username: text('username').unique(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   subscriptionStatus: text('subscription_status').notNull().default('free'),
+  stripeCustomerId: text('stripe_customer_id').unique(),
   aiMessagesToday: integer('ai_messages_today').notNull().default(0),
   aiMessagesResetAt: timestamp('ai_messages_reset_at', { withTimezone: true }).defaultNow().notNull(),
 })

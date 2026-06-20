@@ -1,4 +1,12 @@
 import 'dotenv/config'
+
+const REQUIRED_ENV = ['DATABASE_URL', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'OPENAI_API_KEY'] as const
+const missing = REQUIRED_ENV.filter((k) => !process.env[k])
+if (missing.length) {
+  console.error(`Missing required environment variables: ${missing.join(', ')}`)
+  process.exit(1)
+}
+
 import express, { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
 import path from 'path'

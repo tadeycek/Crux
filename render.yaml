@@ -14,6 +14,20 @@ services:
       - key: PORT
         value: 3001
 
+      # Supabase public anon values — safe to commit (anon role, not service role)
+      # Passed as Docker build args so Vite can embed them in the frontend bundle
+      - key: VITE_SUPABASE_URL
+        value: https://fqipdddaejahtdfzryth.supabase.co
+      - key: VITE_SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxaXBkZGRhZWphaHRkZnpyeXRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MjcxODYsImV4cCI6MjA5NTEwMzE4Nn0.L8sna4YYlUAyoAeAQg8ITrKN3Az_1f5btAuNDbQHZqw
+      - key: VITE_API_URL
+        value: ""
+
+      # Set to your Render service URL, e.g. https://crux.onrender.com
+      # Required: backend CORS only allows origins listed here
+      - key: FRONTEND_URL
+        sync: false
+
       # Fill these in the Render dashboard — never commit real values
       - key: DATABASE_URL
         sync: false

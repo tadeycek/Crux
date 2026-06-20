@@ -1,5 +1,6 @@
 import { useState, useEffect, Component } from 'react'
 import type { ReactNode } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { TopBar } from './components/layout/TopBar'
 import { StatusBar } from './components/layout/StatusBar'
@@ -16,12 +17,14 @@ import { ConceptsDashboard } from './components/concepts/ConceptsDashboard'
 import { ConceptDetail } from './components/concepts/ConceptDetail'
 import { PlaylistsView } from './components/layout/PlaylistsView'
 import { ProgressView } from './components/layout/ProgressView'
+import { PanelErrorBoundary } from './components/layout/PanelErrorBoundary'
 import { useAuth } from './lib/auth'
 import { useSession } from './lib/useSession'
 import { useLanguage } from './lib/useLanguage'
 import { api } from './lib/api'
 import type { ApiProblemDetail, ApiRunResult } from './lib/api'
 import { getStarterCode } from './data/starterCode'
+import { LANGUAGE_META } from './components/editor/CodeEditor'
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null }
@@ -57,13 +60,26 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
 }
 
+function parseLocation(pathname: string): { view: string; slug: string | null; conceptSlug: string | null } {
+  const [, seg1, seg2] = pathname.split('/')
+  if (seg1 === 'practice') return { view: 'practice', slug: seg2 ?? null, conceptSlug: null }
+  if (seg1 === 'concepts') return { view: 'concepts', slug: null, conceptSlug: seg2 ?? null }
+  if (seg1 === 'playlists') return { view: 'playlists', slug: null, conceptSlug: null }
+  if (seg1 === 'progress') return { view: 'progress', slug: null, conceptSlug: null }
+  return { view: 'concepts', slug: null, conceptSlug: null }
+}
+
 function App() {
   const { user, loading } = useAuth()
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(null)
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const initial = parseLocation(location.pathname)
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(initial.slug)
   const [code, setCode] = useState('')
   const [runResult, setRunResult] = useState<ApiRunResult | null>(null)
-  const [activeView, setActiveView] = useState('concepts')
-  const [activeConceptSlug, setActiveConceptSlug] = useState<string | null>(null)
+  const [activeView, setActiveView] = useState(initial.view)
+  const [activeConceptSlug, setActiveConceptSlug] = useState<string | null>(initial.conceptSlug)
   const [searchQuery, setSearchQuery] = useState('')
   const { language, setLanguage } = useLanguage()
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null)
@@ -92,6 +108,16 @@ function App() {
 
     setCode(starter)
   }, [session?.id])
+
+  // Keep URL in sync with app state
+  useEffect(() => {
+    let path = '/'
+    if (activeView === 'practice') path = selectedSlug ? `/practice/${selectedSlug}` : '/practice'
+    else if (activeView === 'concepts') path = activeConceptSlug ? `/concepts/${activeConceptSlug}` : '/concepts'
+    else if (activeView === 'playlists') path = '/playlists'
+    else if (activeView === 'progress') path = '/progress'
+    if (location.pathname !== path) navigate(path, { replace: true })
+  }, [activeView, selectedSlug, activeConceptSlug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleSelectProblem(slug: string) {
     setSelectedSlug(slug)
@@ -125,7 +151,8 @@ function App() {
   }
 
   const displayCode = code || problem?.starterCode || ''
-  const activeLine = 1
+  const [cursorLine, setCursorLine] = useState(1)
+  const [cursorCol, setCursorCol] = useState(1)
 
   if (loading) {
     return (
@@ -166,33 +193,40 @@ function App() {
         borderTop: '1px solid var(--border-soft)',
       }}>
         {activeView === 'concepts' && (
-          activeConceptSlug
-            ? <ConceptDetail
-                slug={activeConceptSlug}
-                onBack={() => setActiveConceptSlug(null)}
-                onPractice={(problemSlug) => {
-                  setActiveView('practice')
-                  setActiveConceptSlug(null)
-                  setSelectedSlug(problemSlug)
-                }}
-              />
-            : <ConceptsDashboard onOpen={setActiveConceptSlug} />
+          <PanelErrorBoundary label="Concepts">
+            {activeConceptSlug
+              ? <ConceptDetail
+                  slug={activeConceptSlug}
+                  onBack={() => setActiveConceptSlug(null)}
+                  onPractice={(problemSlug) => {
+                    setActiveView('practice')
+                    setActiveConceptSlug(null)
+                    setSelectedSlug(problemSlug)
+                  }}
+                />
+              : <ConceptsDashboard onOpen={setActiveConceptSlug} />
+            }
+          </PanelErrorBoundary>
         )}
         {activeView === 'playlists' && (
-          <PlaylistsView
-            onSelectProblem={(slug) => {
-              setActiveView('practice')
-              handleSelectProblem(slug)
-            }}
-          />
+          <PanelErrorBoundary label="Playlists">
+            <PlaylistsView
+              onSelectProblem={(slug) => {
+                setActiveView('practice')
+                handleSelectProblem(slug)
+              }}
+            />
+          </PanelErrorBoundary>
         )}
         {activeView === 'progress' && (
-          <ProgressView
-            onResumeProblem={(slug) => {
-              setActiveView('practice')
-              handleSelectProblem(slug)
-            }}
-          />
+          <PanelErrorBoundary label="Progress">
+            <ProgressView
+              onResumeProblem={(slug) => {
+                setActiveView('practice')
+                handleSelectProblem(slug)
+              }}
+            />
+          </PanelErrorBoundary>
         )}
         {activeView !== 'practice' && activeView !== 'concepts' && activeView !== 'playlists' && activeView !== 'progress' && (
           <ComingSoonView label={activeView} />
@@ -220,6 +254,7 @@ function App() {
                   onChange={handleCodeChange}
                   onRun={handleRun}
                   onReset={() => setCode(getStarterCode(problem?.slug ?? '', language, problem?.starterCode ?? ''))}
+                  onCursorChange={(line, col) => { setCursorLine(line); setCursorCol(col) }}
                   isRunning={runMutation.isPending}
                 />
                 <div style={{ background: 'var(--border-soft)' }} />
@@ -227,24 +262,29 @@ function App() {
               </div>
 
               <div style={{ background: 'var(--border-soft)' }} />
-              <ChatPanel
-                sessionId={session?.id}
-                messages={sessionDetail?.messages}
-                code={displayCode}
-                language={language}
-                runResult={runResult}
-                onLimitReached={() => setShowUpgradeModal(true)}
-              />
+              <PanelErrorBoundary label="AI Tutor">
+                <ChatPanel
+                  sessionId={session?.id}
+                  messages={sessionDetail?.messages}
+                  code={displayCode}
+                  language={language}
+                  runResult={runResult}
+                  onLimitReached={() => setShowUpgradeModal(true)}
+                />
+              </PanelErrorBoundary>
             </div>
           </>
         )}
       </main>
 
       <StatusBar
-        activeLine={activeLine}
+        activeLine={cursorLine}
+        activeCol={cursorCol}
         totalLines={displayCode.split('\n').length}
         savedAt={saveError ? 'Save failed' : isSaving ? 'Saving…' : 'Saved'}
         isRunning={runMutation.isPending}
+        language={activeView === 'practice' ? `${LANGUAGE_META[language].label} ${LANGUAGE_META[language].version}` : undefined}
+        problemSlug={selectedSlug}
       />
 
       {settingsSection && user && (

@@ -146,6 +146,7 @@ export interface ApiProgressSummary {
   grid: number[]
   problemsSolved: number
   totalSessions: number
+  recentProblems: { id: number; title: string; slug: string }[]
 }
 
 export interface ApiPlaylistProblem {

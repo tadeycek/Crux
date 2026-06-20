@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { db } from '../db/client'
 import { sessions, messages, problems, profiles } from '../db/schema'
-import { eq, and, asc, count } from 'drizzle-orm'
+import { eq, and, asc, count, lt, sql } from 'drizzle-orm'
 import { requireAuth, AuthRequest } from '../middleware/auth'
 import { getAIResponse } from '../services/ai'
 import { z } from 'zod'
@@ -49,20 +49,26 @@ chatRouter.post('/:sessionId', chatLimiter, async (req: AuthRequest, res) => {
     const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
     const resetAt = new Date(p.aiMessagesResetAt)
 
-    // Reset counter if it hasn't been reset today yet
+    // Reset stale counter first (non-atomic is safe here — worst case is a redundant reset)
     if (resetAt < todayUTC) {
       await db.update(profiles)
         .set({ aiMessagesToday: 0, aiMessagesResetAt: todayUTC })
         .where(eq(profiles.id, req.userId!))
-      p.aiMessagesToday = 0
     }
 
-    if (p.aiMessagesToday >= FREE_DAILY_LIMIT) {
+    // Atomic increment — only succeeds if still below the limit after the reset above
+    const incremented = await db.update(profiles)
+      .set({ aiMessagesToday: sql`${profiles.aiMessagesToday} + 1` })
+      .where(and(eq(profiles.id, req.userId!), lt(profiles.aiMessagesToday, FREE_DAILY_LIMIT)))
+      .returning({ used: profiles.aiMessagesToday })
+
+    if (!incremented.length) {
+      const current = await db.select({ used: profiles.aiMessagesToday }).from(profiles).where(eq(profiles.id, req.userId!)).limit(1)
       res.status(429).json({
         error: `Daily limit of ${FREE_DAILY_LIMIT} AI messages reached. Upgrade to Pro for unlimited access.`,
         code: 'AI_LIMIT_REACHED',
         limit: FREE_DAILY_LIMIT,
-        used: p.aiMessagesToday,
+        used: current[0]?.used ?? FREE_DAILY_LIMIT,
       })
       return
     }
@@ -105,13 +111,6 @@ chatRouter.post('/:sessionId', chatLimiter, async (req: AuthRequest, res) => {
     role: 'assistant',
     content: aiContent,
   }).returning()
-
-  // Increment daily counter for free users
-  if (!isPro) {
-    await db.update(profiles)
-      .set({ aiMessagesToday: p.aiMessagesToday + 1 })
-      .where(eq(profiles.id, req.userId!))
-  }
 
   res.json({ userMessage: userMsg, assistantMessage: assistantMsg })
 })

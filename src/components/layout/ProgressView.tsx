@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { useConceptProgress } from '../../lib/useConceptProgress'
+import { TRACKS, CONCEPTS } from '../../data/concepts'
 
 interface ProgressViewProps {
   onResumeProblem: (slug: string) => void
@@ -26,14 +27,19 @@ export function ProgressView({ onResumeProblem }: ProgressViewProps) {
   const problemsSolved = summary?.problemsSolved ?? 0
   const grid = summary?.grid ?? Array.from({ length: 98 }, () => 0)
 
-  const TRACKS = [
-    { label: 'Foundations', total: 4, color: 'oklch(0.72 0.14 55)' },
-    { label: 'Data Structures', total: 6, color: 'oklch(0.68 0.15 278)' },
-    { label: 'Algorithms', total: 10, color: 'oklch(0.72 0.15 155)' },
-    { label: 'Core CS Foundations', total: 8, color: 'oklch(0.70 0.16 200)' },
-  ]
-  const totalConcepts = TRACKS.reduce((s, t) => s + t.total, 0)
-  const perTrackCompleted = completedCount / Math.max(totalConcepts, 1)
+  const TRACK_COLORS: Record<string, string> = {
+    foundations:      'oklch(0.72 0.14 55)',
+    'data-structures':'oklch(0.68 0.15 278)',
+    algorithms:       'oklch(0.72 0.15 155)',
+    advanced:         'oklch(0.68 0.16 320)',
+    'core-cs':        'oklch(0.70 0.16 200)',
+  }
+
+  const trackStats = TRACKS.map((t) => {
+    const conceptsInTrack = CONCEPTS.filter((c) => c.track === t.id)
+    const completed = conceptsInTrack.filter((c) => progress[c.slug] === 'completed').length
+    return { label: t.label, total: conceptsInTrack.length, completed, color: TRACK_COLORS[t.id] ?? 'var(--accent)' }
+  }).filter((t) => t.total > 0)
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: 'var(--bg-0)', display: 'flex', flexDirection: 'column' }}>
@@ -114,8 +120,8 @@ export function ProgressView({ onResumeProblem }: ProgressViewProps) {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {TRACKS.map((t) => {
-                  const count = Math.round(perTrackCompleted * t.total)
+                {trackStats.map((t) => {
+                  const count = t.completed
                   const pct = Math.round((count / t.total) * 100)
                   return (
                     <div key={t.label}>
@@ -144,12 +150,14 @@ export function ProgressView({ onResumeProblem }: ProgressViewProps) {
               </div>
 
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                {[
-                  { label: 'Climbing Stairs', slug: 'climbing-stairs' },
-                  { label: 'Two Sum', slug: 'two-sum' },
-                  { label: 'Number of Islands', slug: 'number-of-islands' },
-                  { label: 'Group Anagrams', slug: 'group-anagrams' },
-                ].map(({ label, slug }) => (
+                {(summary?.recentProblems?.length
+                  ? summary.recentProblems
+                  : [
+                      { title: 'Climbing Stairs', slug: 'climbing-stairs' },
+                      { title: 'Two Sum', slug: 'two-sum' },
+                      { title: 'Number of Islands', slug: 'number-of-islands' },
+                    ]
+                ).map(({ title: label, slug }) => (
                   <button
                     key={slug}
                     onClick={() => onResumeProblem(slug)}

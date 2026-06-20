@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import rateLimit from 'express-rate-limit'
 import { db } from '../db/client'
 import { profiles } from '../db/schema'
 import { eq } from 'drizzle-orm'
@@ -7,8 +8,16 @@ import { supabaseAdmin as supabase } from '../lib/supabaseAdmin'
 
 export const authRouter = Router()
 
+const lookupLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many lookup requests' },
+})
+
 // GET /api/auth/lookup?username=foo  (public — used for username login)
-authRouter.get('/lookup', async (req, res) => {
+authRouter.get('/lookup', lookupLimiter, async (req, res) => {
   const username = (req.query.username as string)?.trim()
   if (!username) { res.status(400).json({ error: 'username required' }); return }
 

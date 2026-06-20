@@ -4,6 +4,7 @@ import { EditorView, lineNumbers, highlightActiveLine, highlightActiveLineGutter
 import { defaultKeymap, indentWithTab, history, historyKeymap } from '@codemirror/commands'
 import { python } from '@codemirror/lang-python'
 import { javascript } from '@codemirror/lang-javascript'
+import { java } from '@codemirror/lang-java'
 import { cpp } from '@codemirror/lang-cpp'
 import { bracketMatching, indentOnInput, syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
 import { cruxTheme, cruxHighlight } from './editorTheme'
@@ -22,7 +23,7 @@ function getLangExtension(lang: Language) {
   switch (lang) {
     case 'python':     return python()
     case 'javascript': return javascript()
-    case 'java':       return javascript()
+    case 'java':       return java()
     case 'cpp':        return cpp()
   }
 }
@@ -36,14 +37,20 @@ interface CodeEditorProps {
   onChange: (code: string) => void
   onRun?: () => void
   onReset?: () => void
+  onCursorChange?: (line: number, col: number) => void
   isRunning?: boolean
 }
 
-export function CodeEditor({ code, language, onLanguageChange, onChange, onRun, onReset, isRunning }: CodeEditorProps) {
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.platform)
+
+export function CodeEditor({ code, language, onLanguageChange, onChange, onRun, onReset, onCursorChange, isRunning }: CodeEditorProps) {
   const [activeTab, setActiveTab] = useState<TabId>('solution')
   // scratch content is local — it's a personal notepad, not saved to session
   const [scratchCode, setScratchCode] = useState('')
   const [showLangMenu, setShowLangMenu] = useState(false)
+  const [copySuccess, setCopySuccess] = useState(false)
+  // Track saved code to know when the dot should appear
+  const lastSavedCodeRef = useRef(code)
 
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
@@ -70,12 +77,18 @@ export function CodeEditor({ code, language, onLanguageChange, onChange, onRun, 
     activeTabRef.current = activeTab
 
     const updateListener = EditorView.updateListener.of((update) => {
-      if (!update.docChanged) return
-      const value = update.state.doc.toString()
-      if (activeTabRef.current === 'solution') {
-        onChange(value)
-      } else {
-        setScratchCode(value)
+      if (update.docChanged) {
+        const value = update.state.doc.toString()
+        if (activeTabRef.current === 'solution') {
+          onChange(value)
+        } else {
+          setScratchCode(value)
+        }
+      }
+      if (update.selectionSet && activeTabRef.current === 'solution' && onCursorChange) {
+        const pos = update.state.selection.main.head
+        const line = update.state.doc.lineAt(pos)
+        onCursorChange(line.number, pos - line.from + 1)
       }
     })
 
@@ -108,7 +121,8 @@ export function CodeEditor({ code, language, onLanguageChange, onChange, onRun, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab])
 
-  // Sync external code changes into the solution editor without rebuilding
+  // Sync external code changes into the solution editor without rebuilding.
+  // When the parent resets code (new problem / language switch), treat it as "saved".
   useEffect(() => {
     if (activeTab !== 'solution') return
     const view = viewRef.current
@@ -116,6 +130,7 @@ export function CodeEditor({ code, language, onLanguageChange, onChange, onRun, 
     const current = view.state.doc.toString()
     if (current !== code) {
       view.dispatch({ changes: { from: 0, to: current.length, insert: code } })
+      lastSavedCodeRef.current = code
     }
   }, [code, activeTab])
 
@@ -138,7 +153,8 @@ export function CodeEditor({ code, language, onLanguageChange, onChange, onRun, 
     return () => document.removeEventListener('mousedown', handle)
   }, [showLangMenu])
 
-  const solutionUnsaved = activeTab === 'solution' // dot indicator on active tab
+  // Dot shows only when the solution has been edited since the last external sync
+  const solutionUnsaved = activeTab === 'solution' && code !== lastSavedCodeRef.current
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, background: 'var(--bg-1)' }}>
@@ -216,7 +232,15 @@ export function CodeEditor({ code, language, onLanguageChange, onChange, onRun, 
           <GhostBtn title="Reset" onClick={onReset ?? (() => {})}>
             <RefreshIcon />
           </GhostBtn>
-          <GhostBtn title="Copy" onClick={() => navigator.clipboard.writeText(activeCode)}>
+          <GhostBtn
+            title={copySuccess ? 'Copied!' : 'Copy'}
+            onClick={() => {
+              navigator.clipboard.writeText(activeCode).then(() => {
+                setCopySuccess(true)
+                setTimeout(() => setCopySuccess(false), 1500)
+              }).catch(() => {})
+            }}
+          >
             <CopyIcon />
           </GhostBtn>
 
@@ -247,7 +271,7 @@ export function CodeEditor({ code, language, onLanguageChange, onChange, onRun, 
                 background: 'rgba(255,255,255,0.13)',
                 borderRadius: 4, padding: '1px 5px',
                 color: 'oklch(0.95 0.05 278)',
-              }}>⌘↵</kbd>
+              }}>{isMac ? '⌘↵' : 'Ctrl+↵'}</kbd>
             )}
           </button>
         </div>
