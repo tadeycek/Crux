@@ -26,10 +26,9 @@ services:
       - key: VITE_BILLING_ENABLED
         value: "false"
 
-      # Render assigns the URL from the service name: telery → https://telery.onrender.com
-      # If Render picks a different URL (name taken), update this to match
+      # Custom domain — update if domain changes
       - key: FRONTEND_URL
-        value: https://telery.onrender.com
+        value: https://telery.dev
 
       # Fill these in the Render dashboard — never commit real values
       - key: DATABASE_URL
