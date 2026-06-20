@@ -51,9 +51,11 @@ app.use(cors({
     if (!origin) return cb(null, true)
     if (!isProd && origin.startsWith('http://localhost')) return cb(null, true)
     const allowed = (process.env.FRONTEND_URL ?? '').split(',').map(o => o.trim()).filter(Boolean)
-    // If FRONTEND_URL is not configured, allow all origins (safe for first deploy;
-    // set FRONTEND_URL in Render dashboard to lock down after initial smoke-test)
-    if (allowed.length === 0 || allowed.includes(origin)) return cb(null, true)
+    if (allowed.length === 0) {
+      if (!isProd) return cb(null, true)
+      return cb(new Error('CORS: FRONTEND_URL not configured'))
+    }
+    if (allowed.includes(origin)) return cb(null, true)
     cb(new Error(`CORS: ${origin} not allowed`))
   },
 }))
