@@ -192,19 +192,75 @@ export function ChatPanel({ sessionId, messages: initialMessages, code, language
         {typing && <TypingIndicator />}
       </div>
 
-      {/* composer */}
-      <div style={{ padding: '10px 14px 14px', borderTop: '1px solid var(--border-soft)', background: 'var(--bg-1)' }}>
-        <ComposerShell
-          value={draft}
-          onChange={setDraft}
-          onSend={send}
-          placeholder={hasSession ? MODE_PLACEHOLDER[mode] : 'Select a problem to chat…'}
-          disabled={!hasSession || sendMutation.isPending}
-          code={code}
-          language={language}
-          runResult={runResult}
-        />
-      </div>
+      {/* composer — or upgrade wall when limit is hit */}
+      {!billing.isPro && billing.aiMessagesRemaining === 0 ? (
+        <div style={{ padding: '12px 14px 16px', borderTop: '1px solid var(--border-soft)', background: 'var(--bg-1)' }}>
+          <div style={{
+            background: 'oklch(0.52 0.16 278 / 0.07)',
+            border: '1px solid oklch(0.52 0.16 278 / 0.25)',
+            borderRadius: 10, padding: '14px 16px',
+            display: 'flex', flexDirection: 'column', gap: 10,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: 'var(--accent)', fontSize: 15 }}>✦</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg)' }}>Daily limit reached</span>
+              <span style={{ fontSize: 11, color: 'var(--fg-4)' }}>· Resets at midnight UTC</span>
+            </div>
+            <p style={{ margin: 0, fontSize: 12.5, color: 'var(--fg-3)', lineHeight: 1.5 }}>
+              You've used all 10 free AI messages for today. Upgrade to Pro for unlimited tutoring.
+            </p>
+            <button
+              onClick={onLimitReached}
+              style={{
+                background: 'linear-gradient(180deg, oklch(0.52 0.16 278), oklch(0.44 0.16 278))',
+                color: 'white', border: '1px solid oklch(0.62 0.16 278 / 0.5)',
+                borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', fontFamily: 'inherit', alignSelf: 'flex-start',
+              }}
+            >
+              Upgrade to Pro →
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ padding: '10px 14px 14px', borderTop: '1px solid var(--border-soft)', background: 'var(--bg-1)' }}>
+          {!billing.isPro && (billing.aiMessagesRemaining ?? 10) <= 2 && (billing.aiMessagesRemaining ?? 10) > 0 && (
+            <div style={{
+              marginBottom: 8, padding: '6px 10px',
+              background: 'oklch(0.65 0.15 45 / 0.1)',
+              border: '1px solid oklch(0.65 0.15 45 / 0.25)',
+              borderRadius: 7, fontSize: 12,
+              color: 'oklch(0.82 0.10 60)',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <span>⚠</span>
+              <span>
+                {billing.aiMessagesRemaining} message{billing.aiMessagesRemaining === 1 ? '' : 's'} left today —{' '}
+              </span>
+              <button
+                onClick={onLimitReached}
+                style={{
+                  background: 'none', border: 0, cursor: 'pointer',
+                  color: 'inherit', textDecoration: 'underline',
+                  fontSize: 12, padding: 0, fontFamily: 'inherit',
+                }}
+              >
+                Upgrade for unlimited
+              </button>
+            </div>
+          )}
+          <ComposerShell
+            value={draft}
+            onChange={setDraft}
+            onSend={send}
+            placeholder={hasSession ? MODE_PLACEHOLDER[mode] : 'Select a problem to chat…'}
+            disabled={!hasSession || sendMutation.isPending}
+            code={code}
+            language={language}
+            runResult={runResult}
+          />
+        </div>
+      )}
     </section>
   )
 }

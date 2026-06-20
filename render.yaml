@@ -22,9 +22,8 @@ services:
         value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxaXBkZGRhZWphaHRkZnpyeXRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MjcxODYsImV4cCI6MjA5NTEwMzE4Nn0.L8sna4YYlUAyoAeAQg8ITrKN3Az_1f5btAuNDbQHZqw
       - key: VITE_API_URL
         value: ""
-      # Set to "true" once Stripe secrets are added to enable billing UI
       - key: VITE_BILLING_ENABLED
-        value: "false"
+        value: "true"
 
       # Custom domain — update if domain changes
       - key: FRONTEND_URL
@@ -38,4 +37,12 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: OPENAI_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_MONTHLY_PRICE_ID
+        sync: false
+      - key: STRIPE_YEARLY_PRICE_ID
         sync: false

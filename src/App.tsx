@@ -177,6 +177,7 @@ function App() {
       <TopBar
         userEmail={user.email}
         onOpenSettings={setSettingsSection}
+        onUpgrade={() => setShowUpgradeModal(true)}
         activeView={activeView}
         onNavChange={(view) => {
           setActiveView(view)

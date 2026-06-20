@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { LogoIcon, SearchIcon } from '../icons'
 import { AvatarMenu } from './AvatarMenu'
 import { api } from '../../lib/api'
+import { useBilling } from '../../lib/useBilling'
 import type { SettingsSection } from '../settings/SettingsPage'
 
 const NAV_ITEMS = ['Practice', 'Concepts', 'Playlists', 'Progress'] as const
@@ -10,6 +11,7 @@ const NAV_ITEMS = ['Practice', 'Concepts', 'Playlists', 'Progress'] as const
 interface TopBarProps {
   userEmail?: string
   onOpenSettings?: (section: SettingsSection) => void
+  onUpgrade?: () => void
   activeView?: string
   onNavChange?: (view: string) => void
   searchQuery?: string
@@ -18,8 +20,9 @@ interface TopBarProps {
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.platform)
 
-export function TopBar({ userEmail, onOpenSettings, activeView = 'practice', onNavChange, searchQuery = '', onSearchChange }: TopBarProps) {
+export function TopBar({ userEmail, onOpenSettings, onUpgrade, activeView = 'practice', onNavChange, searchQuery = '', onSearchChange }: TopBarProps) {
   const [copied, setCopied] = useState(false)
+  const { billing } = useBilling()
   const { data: progressSummary } = useQuery({
     queryKey: ['progress-summary'],
     queryFn: () => api.progress.summary(),
@@ -127,6 +130,22 @@ export function TopBar({ userEmail, onOpenSettings, activeView = 'practice', onN
           <span style={{ color: 'var(--fg)', fontWeight: 600 }}>{progressSummary?.streak ?? 0}</span>
           <span style={{ color: 'var(--fg-3)' }}>day streak</span>
         </div>
+
+        {!billing.isPro && (
+          <button
+            onClick={onUpgrade}
+            style={{
+              background: 'linear-gradient(180deg, oklch(0.52 0.16 278), oklch(0.44 0.16 278))',
+              color: 'white', border: '1px solid oklch(0.62 0.16 278 / 0.5)',
+              borderRadius: 7, padding: '5px 12px',
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              fontFamily: 'inherit',
+            }}
+          >
+            <span style={{ fontSize: 10 }}>✦</span> Upgrade
+          </button>
+        )}
 
         <button
           onClick={handleShare}
