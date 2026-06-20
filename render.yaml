@@ -22,6 +22,9 @@ services:
         value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxaXBkZGRhZWphaHRkZnpyeXRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MjcxODYsImV4cCI6MjA5NTEwMzE4Nn0.L8sna4YYlUAyoAeAQg8ITrKN3Az_1f5btAuNDbQHZqw
       - key: VITE_API_URL
         value: ""
+      # Set to "true" once Stripe secrets are configured to enable billing UI
+      - key: VITE_BILLING_ENABLED
+        value: "false"
 
       # Set to your Render service URL, e.g. https://crux.onrender.com
       # Required: backend CORS only allows origins listed here

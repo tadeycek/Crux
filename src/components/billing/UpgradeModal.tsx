@@ -22,7 +22,10 @@ export function UpgradeModal({ onClose }: Props) {
     onSuccess: (data) => { window.location.href = data.url },
   })
 
-  const isStripeReady = !checkoutMutation.error?.message?.includes('STRIPE_NOT_CONFIGURED')
+  // VITE_BILLING_ENABLED is set to "false" in render.yaml until Stripe secrets are configured.
+  // Once Stripe is live, flip it to "true" and redeploy.
+  const billingEnabled = import.meta.env.VITE_BILLING_ENABLED === 'true'
+  const isStripeReady = billingEnabled && !checkoutMutation.error?.message?.includes('STRIPE_NOT_CONFIGURED')
 
   return (
     <div
