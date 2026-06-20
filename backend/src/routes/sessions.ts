@@ -13,7 +13,7 @@ const runLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many run requests — wait a minute.' },
-  keyGenerator: (req) => (req as AuthRequest).userId ?? req.ip ?? 'unknown',
+  keyGenerator: (req) => (req as AuthRequest).userId!,
 })
 
 async function ensureProfile(userId: string) {
