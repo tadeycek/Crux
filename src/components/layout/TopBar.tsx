@@ -52,7 +52,7 @@ export function TopBar({ userEmail, onOpenSettings, activeView = 'practice', onN
             <LogoIcon size={18} />
           </span>
           <span style={{ fontFamily: 'var(--sans)' }}>
-            think<span style={{ color: 'var(--accent)' }}>.</span>dev
+            telery<span style={{ color: 'var(--accent)' }}>.</span>dev
           </span>
         </div>
 
