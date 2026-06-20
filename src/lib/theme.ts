@@ -14,7 +14,7 @@ function applyTheme(theme: Theme) {
 
 export function useTheme() {
   const [theme, setThemeState] = useState<Theme>(() => {
-    return (localStorage.getItem('crux-theme') as Theme) ?? 'dark'
+    return (localStorage.getItem('telery-theme') as Theme) ?? 'dark'
   })
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export function useTheme() {
   }, [theme])
 
   function setTheme(t: Theme) {
-    localStorage.setItem('crux-theme', t)
+    localStorage.setItem('telery-theme', t)
     setThemeState(t)
   }
 
@@ -39,4 +39,4 @@ export function useTheme() {
 }
 
 // initialise on module load so theme is applied before first render
-applyTheme((localStorage.getItem('crux-theme') as Theme) ?? 'dark')
+applyTheme((localStorage.getItem('telery-theme') as Theme) ?? 'dark')

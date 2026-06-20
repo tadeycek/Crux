@@ -77,7 +77,7 @@ export function AuthScreen() {
             fontSize: 22, fontWeight: 700, color: 'var(--fg)',
             letterSpacing: '-0.5px',
           }}>
-            <span style={{ color: 'var(--accent)' }}>✦</span> Crux
+            <span style={{ color: 'var(--accent)' }}>✦</span> Telery
           </div>
           <div style={{ marginTop: 6, fontSize: 13, color: 'var(--fg-3)' }}>
             {mode === 'login' ? 'Sign in to continue' : mode === 'signup' ? 'Create your account' : 'Reset your password'}

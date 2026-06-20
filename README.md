@@ -1,4 +1,4 @@
-# Crux
+# Telery
 
 A Socratic CS learning tool that teaches algorithmic thinking through guided AI tutoring — not by giving answers, but by asking the right questions.
 

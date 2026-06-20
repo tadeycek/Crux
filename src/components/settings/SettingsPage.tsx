@@ -239,7 +239,7 @@ function AppearanceSection() {
 
   return (
     <>
-      <SectionHeader title="Appearance" subtitle="Customise how Crux looks for you." />
+      <SectionHeader title="Appearance" subtitle="Customise how Telery looks for you." />
       <Divider />
 
       <div style={{ marginBottom: 6 }}>
@@ -450,7 +450,7 @@ function BillingSection() {
           <span style={{ fontSize: 22 }}>{isPro ? '✦' : '○'}</span>
           <div>
             <div style={{ fontSize: 14, fontWeight: 600, color: isPro ? 'var(--accent-fg)' : 'var(--fg)' }}>
-              {isPro ? 'Crux Pro' : 'Free plan'}
+              {isPro ? 'Telery Pro' : 'Free plan'}
             </div>
             <div style={{ fontSize: 12, color: 'var(--fg-4)', marginTop: 2 }}>
               {isPro ? 'Unlimited AI messages · All features' : '10 AI messages per day · Core features'}
@@ -505,7 +505,7 @@ function BillingSection() {
             borderRadius: 10,
             fontSize: 13, color: 'var(--fg-3)', lineHeight: 1.6,
           }}>
-            Crux Pro unlocks unlimited AI tutoring, all languages, and every future problem.
+            Telery Pro unlocks unlimited AI tutoring, all languages, and every future problem.
             Pricing: <strong style={{ color: 'var(--fg)' }}>$12/month</strong> or{' '}
             <strong style={{ color: 'var(--fg)' }}>$99/year</strong> (2 months free).
             <br />

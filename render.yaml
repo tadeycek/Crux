@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: crux
+    name: telery
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
@@ -26,10 +26,10 @@ services:
       - key: VITE_BILLING_ENABLED
         value: "false"
 
-      # Render assigns the URL from the service name: crux → https://crux.onrender.com
+      # Render assigns the URL from the service name: telery → https://telery.onrender.com
       # If Render picks a different URL (name taken), update this to match
       - key: FRONTEND_URL
-        value: https://crux.onrender.com
+        value: https://telery.onrender.com
 
       # Fill these in the Render dashboard — never commit real values
       - key: DATABASE_URL

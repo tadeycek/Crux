@@ -249,7 +249,7 @@ function Message({ msg }: { msg: ApiMessage; onChip: (text: string) => void }) {
             color: isTutor ? 'var(--accent-fg)' : 'var(--fg)',
             letterSpacing: '-0.005em',
           }}>
-            {isTutor ? 'Crux tutor' : 'You'}
+            {isTutor ? 'Telery tutor' : 'You'}
           </span>
           <span style={{ fontSize: 11, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>
             {fmtTime(msg.createdAt)}
@@ -348,7 +348,7 @@ function TypingIndicator() {
       </div>
       <div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-fg)' }}>Crux tutor</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-fg)' }}>Telery tutor</span>
           <span style={{ fontSize: 11, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>now</span>
         </div>
         <div style={{

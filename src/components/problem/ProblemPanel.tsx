@@ -212,7 +212,7 @@ function DescriptionContent({ problem }: { problem: ApiProblemDetail }) {
             Tutor mode is on
           </div>
           <p style={{ margin: 0, color: 'var(--fg-2)', fontSize: 12.5, lineHeight: 1.55 }}>
-            Crux won't show you the solution. Ask away — it'll question you back until{' '}
+            Telery won't show you the solution. Ask away — it'll question you back until{' '}
             <em style={{ color: 'var(--fg)', fontStyle: 'italic' }}>you</em> see the answer.
           </p>
         </div>

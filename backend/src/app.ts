@@ -104,5 +104,5 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 })
 
 app.listen(port, () => {
-  console.log(`Crux backend running on :${port}`)
+  console.log(`Telery backend running on :${port}`)
 })

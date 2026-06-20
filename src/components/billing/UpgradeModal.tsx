@@ -51,7 +51,7 @@ export function UpgradeModal({ onClose }: Props) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <span style={{ color: 'var(--accent)', fontSize: 18 }}>✦</span>
               <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg)', letterSpacing: '-0.03em' }}>
-                Crux Pro
+                Telery Pro
               </span>
               <span style={{
                 fontSize: 11, fontWeight: 600, padding: '2px 8px',

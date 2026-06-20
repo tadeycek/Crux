@@ -7,7 +7,7 @@ import { javascript } from '@codemirror/lang-javascript'
 import { java } from '@codemirror/lang-java'
 import { cpp } from '@codemirror/lang-cpp'
 import { bracketMatching, indentOnInput, syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
-import { cruxTheme, cruxHighlight } from './editorTheme'
+import { teleryTheme, teleryHighlight } from './editorTheme'
 import { PlayIcon, RefreshIcon, CopyIcon, ChevronDownIcon } from '../icons'
 
 export type Language = 'python' | 'javascript' | 'java' | 'cpp'
@@ -102,8 +102,8 @@ export function CodeEditor({ code, language, onLanguageChange, onChange, onRun, 
         bracketMatching(),
         indentOnInput(),
         langCompartment.current.of(getLangExtension(language)),
-        cruxTheme,
-        cruxHighlight,
+        teleryTheme,
+        teleryHighlight,
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
         updateListener,

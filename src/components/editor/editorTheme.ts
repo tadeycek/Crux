@@ -3,7 +3,7 @@ import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
 
 // All colors reference CSS variables so light/dark theme switching works automatically.
-export const cruxTheme = EditorView.theme({
+export const teleryTheme = EditorView.theme({
   '&': {
     color: 'var(--fg-2)',
     backgroundColor: 'var(--bg-inset)',
@@ -62,7 +62,7 @@ export const cruxTheme = EditorView.theme({
   },
 })
 
-export const cruxHighlight = syntaxHighlighting(HighlightStyle.define([
+export const teleryHighlight = syntaxHighlighting(HighlightStyle.define([
   { tag: tags.keyword,                    color: 'var(--c-kw)',      fontStyle: 'italic' },
   { tag: tags.string,                     color: 'var(--c-str)'  },
   { tag: tags.number,                     color: 'var(--c-num)'  },
