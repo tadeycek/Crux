@@ -9,10 +9,11 @@ import rateLimit from 'express-rate-limit'
 
 const runLimiter = rateLimit({
   windowMs: 60_000,
-  max: 20,
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many run requests — wait a minute.' },
+  keyGenerator: (req) => (req as AuthRequest).userId ?? req.ip ?? 'unknown',
 })
 
 async function ensureProfile(userId: string) {

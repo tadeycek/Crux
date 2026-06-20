@@ -10,7 +10,7 @@ export const authRouter = Router()
 
 const lookupLimiter = rateLimit({
   windowMs: 60_000,
-  max: 20,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many lookup requests' },

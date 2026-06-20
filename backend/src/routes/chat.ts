@@ -16,6 +16,7 @@ const chatLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many messages — wait a few minutes.' },
+  keyGenerator: (req) => (req as AuthRequest).userId ?? req.ip ?? 'unknown',
 })
 
 const MAX_MESSAGES_PER_SESSION = 150

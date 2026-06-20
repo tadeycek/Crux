@@ -68,7 +68,7 @@ app.use(express.json({ limit: '200kb' }))
 // Global limiter — prevents broad abuse
 const globalLimiter = rateLimit({
   windowMs: 60_000,
-  max: 120,
+  max: 60,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests' },
